@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - 'develop'
+      - 'bigsur-ci-test'
   pull_request:
     branches:
       - '**'
@@ -22,7 +23,7 @@ jobs:
   tests:
     needs: skip_ci
     if: ${{ needs.skip_ci.outputs.canSkip != 'true' }}
-    runs-on: macos-latest
+    runs-on: macos-11.0
     strategy:
       matrix:
         python-version: [3.5, 3.6, 3.7, 3.8, 3.9]
