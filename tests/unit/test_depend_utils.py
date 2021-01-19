@@ -15,7 +15,8 @@ import pytest
 import textwrap
 
 from PyInstaller.depend import utils
-from PyInstaller.compat import is_unix, is_win
+from PyInstaller.compat import is_win, is_macos_11
+from PyInstaller.utils.tests import xfail
 
 
 CTYPES_CLASSNAMES = (
@@ -58,6 +59,7 @@ def test_ctypes_LibraryLoader_LoadLibrary(monkeypatch, classname):
     assert res == set(['somelib.xxx'])
 
 
+@xfail(is_macos_11, reason='System libraries are hidden on macOS 11.')
 def test_ctypes_util_find_library(monkeypatch):
     # for lind_library() we need a lib actually existing on the system
     if is_win:
