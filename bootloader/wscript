@@ -319,7 +319,7 @@ def set_arch_flags(ctx):
         if ctx.env.PYI_ARCH == '32bit':
             mac_arch = ['-arch', 'i386']
         else:
-            mac_arch = ['-arch', 'x86_64']
+            mac_arch = ['-arch', 'x86_64', '-arch', 'arm64']
         ctx.env.append_value('CFLAGS', mac_arch)
         ctx.env.append_value('CXXFLAGS', mac_arch)
         ctx.env.append_value('LINKFLAGS', mac_arch)
