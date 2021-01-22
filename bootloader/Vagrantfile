@@ -30,6 +30,51 @@ def is_env?(name, value)
 end
 
 
+def storage_osxcross_debianoid
+  # Extend partitions and filesystem on the expanded disk (50 GB)
+  return <<-EOF
+    # Unmount swap partition (first logical partition)
+    swapoff /dev/sda5
+    # Redo the partition table; expand the first primary partition to
+    # 49 GB, and add a 1 GB swap partition at the end (as primary).
+    # NOTE: creating new partition table does not seem to work (we
+    # get "No bootable medium found" on reboot), so we delete partitions
+    # instead.
+    # NOTE: non-interactive mode does not seem to include prompt for removal
+    # of existing ext4 signature.
+    (
+      echo "d"; # delete partition
+      echo "";  # default (5)
+      echo "d"; # delete partition
+      echo "";  # default (2)
+      echo "d"; # delete partition
+      echo "";  # default (1)
+      #echo "o"; # create new DOS partition table
+      echo "n"; # create new partition
+      echo "p"; # primary partition
+      echo "1"; # first primary partition
+      echo "";  # use default start position (2048)
+      echo "+49G"; # partition size
+      #echo "n"; # Partition #1 contains a ext4 signature. Do you want to remove the signature? [Y]es/[N]o
+      echo "a"; # toggle bootable flag on first (and only) partition
+      echo "n"; # create new partition
+      echo "p"; # primary partition
+      echo "2"; # second primary partition
+      echo "";  # default start (end of previous)
+      echo "";  # default end (all remaining space)
+      echo "t"; # toggle partition type
+      echo "2"; # second primary partition
+      echo "82"; # swap partition
+      echo "w"; # write
+    ) | fdisk /dev/sda
+    # Resize filesystem
+    resize2fs /dev/sda1
+    # Re-enable swap (re-create with old UUID) on /dev/sda2
+    mkswap -U 494adc4f-2e8f-4b72-9583-120d7343ef5f /dev/sda2
+    swapon /dev/sda2
+  EOF
+end
+
 def packages_debianoid
   # This always also installs the software for cross-building for OS X and
   # Windows. Differentiating here is most probably not worth the effort.
@@ -57,9 +102,9 @@ def packages_osxcross_debianoid
                -o Dpkg::Options::="--force-confold" upgrade
     # these are typically installed already on a GNU/Linux system
     apt-get install -y cmake make sed kmod
-    apt-get install -y git fuse clang
-    # requirements for darling-dmg (not listed in tools/get_dependencies.sh)
-    apt-get install -y libxml2-dev libicu-dev libssl-dev libbz2-dev libfuse-dev
+    apt-get install -y git clang
+    # requirements for osxcross SDK extraction script (not listed in tools/get_dependencies.sh)
+    apt-get install -y libxml2-dev libicu-dev libssl-dev libbz2-dev liblzma-dev
   EOF
 end
 
@@ -74,14 +119,12 @@ end
 
 def build_osxcross
   return <<-EOF
-    sudo modprobe fuse
     PATH=$PATH:/sbin:/usr/sbin
     SDK=/vagrant/bootloader/_sdks/osx
     cd ~vagrant/osxcross
     mkdir -p $SDK
-    # Build darling-dmg, mount the ``.dmg`` image file via fuse and extract
-    # the SDK into MacOSX*.tar.*
-    ./tools/gen_sdk_package_darling_dmg.sh $SDK/Xcode_7.3.1.dmg || exit 1
+    # Extract the SDK from XCode .xip into MacOSX*.tar.*
+    ./tools/gen_sdk_package_pbzx.sh $SDK/Xcode_12.3.xip || exit 1
     mv MacOSX*.tar.* tarballs/
     # Build the build-tools into directory `target/`
     UNATTENDED=1 ./build.sh
@@ -90,13 +133,13 @@ def build_osxcross
     echo "Minimizing the SDK to include only what is required for building"
     echo "PyInstaller"
     rm -rf libexec/as/{arm,ppc,ppc64} # platforms not supported by pyinstaller
-    rm -rf SDK/tools # darling-dmg, not used for building the bootloader
+    rm -rf SDK/tools # osxcross tools, not used for building the bootloader
     cd SDK/MacOSX*.sdk
     rm -rf usr/lib/{php,dtrace} usr/share usr/bin
     cd System/Library/
     mv Frameworks Frameworks.off
     mkdir Frameworks
-    mv Frameworks.off/{ApplicationServices,CoreGraphics,ImageIO,Carbon,CoreServices,IOKit,CFNetwork,CoreText,IOSurface,CoreFoundation,DiskArbitration,Security}.framework Frameworks
+    mv Frameworks.off/{ApplicationServices,CoreGraphics,ImageIO,Carbon,CoreServices,IOKit,CFNetwork,CoreText,IOSurface,CoreFoundation,DiskArbitration,Security,ColorSync}.framework Frameworks
     rm -rf Frameworks.off CoreServices Printers PrivateFrameworks
     cd ~vagrant/osxcross
 
@@ -266,7 +309,7 @@ def build_bootloader_target_osx(boxname)
     echo $PATH
     export LD_LIBRARY_PATH=~/osxcross/lib:$LD_LIBRARY_PATH
     export MACOSX_DEPLOYMENT_TARGET=10.11
-    python3 ./waf all CC=x86_64-apple-darwin15-clang --clang
+    python3 ./waf all CC=x86_64-apple-darwin20.2-clang --clang
     #python3 ./waf all CC=i386-apple-darwin15-clang
   EOF
 end
@@ -319,13 +362,18 @@ Vagrant.configure(2) do |config|
     b.vm.provider :virtualbox do |v|
       v.memory = 768
     end
+    # Expand the disk to accommodate XCode 12.x. Requires vagrant-disksize plugin!
+    b.disksize.size = '50GB'
+    b.vm.provision "storage osxcross debianoid", :type => :shell,
+        :inline => storage_osxcross_debianoid,
+        :keep_color => true
     b.vm.provision "packages osxcross debianoid", :type => :shell,
         :inline => packages_osxcross_debianoid,
         :keep_color => true
     b.vm.provision "prepare osxcross debianoid", :type => :shell,
         :inline => prepare_osxcross_debianiod,
         :keep_color => true
-    # Reload for the case the kernel changed, thus fuse will be loaded
+    # Reload in case the kernel changed
     b.vm.provision :reload
     b.vm.provision "build osxcross", :type => :shell,
         :inline => build_osxcross,
