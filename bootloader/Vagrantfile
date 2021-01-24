@@ -141,8 +141,8 @@ def build_osxcross
     SDK=/vagrant/bootloader/_sdks/osx
     cd ~vagrant/osxcross
     mkdir -p $SDK
-    # Extract the SDK from XCode .xip into MacOSX*.tar.*
-    ./tools/gen_sdk_package_pbzx.sh $SDK/Xcode_12.3.xip || exit 1
+    # Extract the SDK from Xcode.xip into MacOSX*.tar.*
+    ./tools/gen_sdk_package_pbzx.sh $SDK/Xcode.xip || exit 1
     mv MacOSX*.tar.* tarballs/
     # Build the build-tools into directory `target/`
     UNATTENDED=1 ./build.sh
