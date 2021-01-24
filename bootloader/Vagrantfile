@@ -327,8 +327,8 @@ def build_bootloader_target_osx(boxname)
     echo $PATH
     export LD_LIBRARY_PATH=~/osxcross/lib:$LD_LIBRARY_PATH
     export MACOSX_DEPLOYMENT_TARGET=10.11
-    python3 ./waf all CC=x86_64-apple-darwin20.2-clang --clang
-    #python3 ./waf all CC=i386-apple-darwin15-clang
+    export CC=$(basename -a ~/osxcross/bin/x86_64-*-clang)
+    python3 ./waf all --clang
   EOF
 end
 
