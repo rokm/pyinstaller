@@ -631,6 +631,14 @@ class EXE(Target):
             with open(self.name, 'wb') as outf:
                 with open(exe, 'rb') as inf:
                     shutil.copyfileobj(inf, outf, length=64*1024)
+            # Check the bootloader
+            is_fat, archs = osxutils.get_exe_architectures(self.name)
+            archs_str = ", ".join(archs)
+            if is_fat:
+                logger.info("Bootloader EXE is a fat binary (%s)", archs)
+                # TODO: add support for converting to thin binary
+            else:
+                logger.info("Bootloader EXE is a thin binary (%s)", archs)
             # Strip the signature from last arch slice, if necessary
             sig_arch = osxutils.check_exe_signature(self.name)
             if sig_arch:

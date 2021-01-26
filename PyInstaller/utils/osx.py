@@ -174,11 +174,54 @@ def fix_exe_for_code_signing(filename):
                 arch.to_fileobj(fp)
 
 
-def check_exe_signature (filename):
+def _get_arch_string(header):
+    """
+    Converts cputype and cpusubtype from mach_o.mach_header_64 into
+    arch string comparible with lipo/codesign. The list of supported
+    architectures can be found in man(1) arch.
+    """
+    # NOTE: the constants below are taken from macholib.mach_o
+    cputype = header.cputype
+    cpusubtype = header.cpusubtype & 0x0FFFFFFF
+    if cputype == 0x01000000 | 7:
+        if cpusubtype == 8:
+            return 'x86_64h'  # 64-bit intel (haswell)
+        else:
+            return 'x86_64'  # 64-bit intel
+    elif cputype == 0x01000000 | 12:
+        if cpusubtype == 2:
+            return 'arm64e'
+        else:
+            return 'arm64'
+    elif cputype == 7:
+        return 'i386'  # 32-bit intel
+    assert False, 'Unhandled architecture!'
+
+
+def get_exe_architectures(filename):
+    """
+    Inspects the given executable and returns tuple (is_fat, archs),
+    where is_fat is boolean indicating fat/thin binary, and arch is
+    list of architectures with lipo/codesign compatible names.
+    """
+    executable = MachO(filename)
+    return bool(executable.fat), [_get_arch_string(hdr.header)
+                                  for hdr in executable.headers]
+
+
+def check_exe_signature(filename):
     """
     Checks if the last available arch slice in the given multi-arch fat
     executable (or if the given single-arch thin executable) contains
     code signature. Returns codesign-compatible arch string if signature
     is found, empty string otherwise.
     """
-    return 'arm64'
+    executable = MachO(filename)
+    header = executable.headers[-1]
+    # Check for signature
+    sign_sec = [cmd for cmd in header.commands
+                if cmd[0].cmd == LC_CODE_SIGNATURE]
+    if not sign_sec:
+        return ''
+    # Map cpu type to string compatible with codesign
+    return _get_arch_string(header.header)
