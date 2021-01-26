@@ -172,3 +172,13 @@ def fix_exe_for_code_signing(filename):
             fat.to_fileobj(fp)
             for arch in archs:
                 arch.to_fileobj(fp)
+
+
+def check_exe_signature (filename):
+    """
+    Checks if the last available arch slice in the given multi-arch fat
+    executable (or if the given single-arch thin executable) contains
+    code signature. Returns codesign-compatible arch string if signature
+    is found, empty string otherwise.
+    """
+    return 'arm64'

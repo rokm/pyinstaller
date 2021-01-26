@@ -624,6 +624,47 @@ class EXE(Target):
                 logger.debug(stderr)
             if retcode != 0:
                 raise SystemError("objcopy Failure: %s" % stderr)
+        elif is_darwin:
+            import PyInstaller.utils.osx as osxutils
+            # Copy bootloader
+            logger.info("Copying bootloader exe to %s", self.name)
+            with open(self.name, 'wb') as outf:
+                with open(exe, 'rb') as inf:
+                    shutil.copyfileobj(inf, outf, length=64*1024)
+            # Strip the signature from last arch slice, if necessary
+            sig_arch = osxutils.check_exe_signature(self.name)
+            if sig_arch:
+                logger.info("Removing signature from EXE (%s)", sig_arch)
+                retcode, stdout, stderr = exec_command_all(
+                    'codesign', '--remove', '--arch', sig_arch, self.name)
+                logger.debug("codesign returned %i", retcode)
+                if stdout:
+                    logger.debug(stdout)
+                if stderr:
+                    logger.debug(stderr)
+                if retcode != 0:
+                    raise SystemError("codesign Failure: %s" % stderr)
+            # Append the data
+            with open(self.name, 'ab') as outf:
+                with open(self.pkg.name, 'rb') as inf:
+                    shutil.copyfileobj(inf, outf, length=64*1024)
+            # Fix Mach-O header for codesigning on OS X.
+            logger.info("Fixing EXE for code signing %s", self.name)
+            osxutils.fix_exe_for_code_signing(self.name)
+            # Re-add the signature to the last arch slice, if necessary
+            if sig_arch:
+                logger.info("Re-adding signature to EXE (%s)", sig_arch)
+                # "codesign -s - <file>" adds a dummy signature, same as
+                # clang does when compiling for arm64
+                retcode, stdout, stderr = exec_command_all(
+                    'codesign', '-s', '-', '--arch', sig_arch, self.name)
+                logger.debug("codesign returned %i", retcode)
+                if stdout:
+                    logger.debug(stdout)
+                if stderr:
+                    logger.debug(stderr)
+                if retcode != 0:
+                    raise SystemError("codesign Failure: %s" % stderr)
         else:
             # Fall back to just append on end of file
             logger.info("Appending archive to EXE %s", self.name)
@@ -634,12 +675,6 @@ class EXE(Target):
                 # write the archive data
                 with open(self.pkg.name, 'rb') as infh:
                     shutil.copyfileobj(infh, outf, length=64*1024)
-
-        if is_darwin:
-            # Fix Mach-O header for codesigning on OS X.
-            logger.info("Fixing EXE for code signing %s", self.name)
-            import PyInstaller.utils.osx as osxutils
-            osxutils.fix_exe_for_code_signing(self.name)
 
         os.chmod(self.name, 0o755)
         # get mtime for storing into the guts
