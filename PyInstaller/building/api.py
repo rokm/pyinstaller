@@ -341,6 +341,11 @@ class EXE(Target):
             uac_uiaccess
                 Windows only. Setting to True allows an elevated application to
                 work with Remote Desktop
+            thin_arch
+                macOS only. If specified, the universal2 bootloader executable
+                is converted into single-arch thin binary of the specified
+                architecture. Has no effect if bootloader executable is already
+                a thin single-arch binary.
         """
         from ..config import CONF
         Target.__init__(self)
@@ -366,6 +371,10 @@ class EXE(Target):
         # On Windows allows the exe to request admin privileges.
         self.uac_admin = kwargs.get('uac_admin', False)
         self.uac_uiaccess = kwargs.get('uac_uiaccess', False)
+
+        # On macOS allow thinning the bootloader from universal2 fat
+        # binary (if available) to single-arch thin binary
+        self.thin_arch = kwargs.get('thin_arch', None)
 
         if CONF['hasUPX']:
             self.upx = kwargs.get('upx', False)
@@ -636,9 +645,22 @@ class EXE(Target):
             archs_str = ", ".join(archs)
             if is_fat:
                 logger.info("Bootloader EXE is a fat binary (%s)", archs)
-                # TODO: add support for converting to thin binary
+                if self.thin_arch:
+                    logger.info("Converting bootloader EXE into thin binary (%s)", self.thin_arch)
+                    assert self.thin_arch in archs, "Unsupported bootloader architecture!"
+                    # Convert using lipo; overwrite file
+                    retcode, stdout, stderr = exec_command_all(
+                        'lipo', '-thin', self.thin_arch, self.name, '-output', self.name)
+                    if stdout:
+                        logger.debug(stdout)
+                    if stderr:
+                        logger.debug(stderr)
+                    if retcode != 0:
+                        raise SystemError("lipo Failure: %s" % stderr)
             else:
-                logger.info("Bootloader EXE is a thin binary (%s)", archs)
+                logger.info("Bootloader EXE is a thin binary (%s)", archs[0])
+                if self.thin_arch:
+                    logger.warning("Ignoring thin_arch=%s option - bootloader is already a thin binary (%s)!", self.thin_arch, archs[0])
             # Strip the signature from last arch slice, if necessary
             sig_arch = osxutils.check_exe_signature(self.name)
             if sig_arch:
