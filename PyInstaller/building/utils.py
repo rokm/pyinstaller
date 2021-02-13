@@ -223,7 +223,7 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
             # (invalidated) signature from collected shared libraries.
             if is_darwin:
                 dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
-                dylib.mac_strip_signature(cachedfile, dist_nm)
+                dylib.mac_replace_signature(cachedfile, dist_nm)
             return cachedfile
 
 
@@ -359,7 +359,7 @@ def checkCache(fnm, strip=False, upx=False, upx_exclude=None, dist_nm=None):
     # (invalidated) signature from collected shared libraries.
     if is_darwin:
         dylib.mac_set_relative_dylib_deps(cachedfile, dist_nm)
-        dylib.mac_strip_signature(cachedfile, dist_nm)
+        dylib.mac_replace_signature(cachedfile, dist_nm)
     return cachedfile
 
 

@@ -364,12 +364,16 @@ def mac_is_binary_signed(filename):
     return False
 
 
-def mac_strip_signature(libname, distname):
+def mac_replace_signature(libname, distname):
     """
-    On macOS, strip away the signature from the binary file. As we may
-    not be collecting all components from a signed framework bundle, the
-    collection may invalidate the existing signature on a collected
-    shared library, which will prevent the latter from being loaded.
+    On macOS, replace the signature from the binary file with new
+    dummy signature. As we may not be collecting all components
+    from a signed framework bundle, the collection may invalidate the
+    existing signature on a collected shared library, which will
+    prevent the latter from being loaded. On x86_64 it would suffice
+    to strip away the invalidated siganture, but arm64 requires that
+    a signature (even if a dummy one is present). So generate a dummy
+    signature for all architectures.
     """
     from ..compat import exec_command_rc
 
@@ -381,16 +385,17 @@ def mac_strip_signature(libname, distname):
         return
     if not mac_is_binary_signed(libname):
         return
-    # Run codesign --remove-signature libname
+    # Run codesign -s - --force --all-architectures libname
     try:
-        logger.debug("Removing signature from %s", libname)
-        result = exec_command_rc('codesign', '--remove-signature', libname)
+        logger.debug("Replacing signature on %s", libname)
+        result = exec_command_rc('codesign', '-s', '-', '--force',
+                                 '--all-architectures', libname)
     except Exception as e:
         logger.warning(
-            "Failed to run 'codesign' to remove signature from %s: %r",
+            "Failed to run 'codesign' to replace signature on %s: %r",
             libname, e)
         return
     if result != 0:
         logger.warning(
-            "'codesign --remove-signature %s' returned non-zero status %d",
-            libname, result)
+            "'codesign -s - --force --all-architectures %s' returned "
+            "non-zero status %d", libname, result)
