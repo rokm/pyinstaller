@@ -42,6 +42,16 @@ if is_win:
     from PyInstaller.utils.win32 import winmanifest, icon, versioninfo, winresource
 
 
+def _is_libdynload_extension(typ, dst, src):
+    """
+    Determines if the given TOC entry is an EXTENSION coming from
+    python's lib-dynload directory.
+    """
+    return typ == 'EXTENSION' \
+        and not os.path.dirname(os.path.normpath(dst)) \
+        and os.path.basename(os.path.dirname(src)) == 'lib-dynload'
+
+
 class PYZ(Target):
     """
     Creates a ZlibArchive that contains all pure Python modules.
@@ -233,6 +243,11 @@ class PKG(Target):
                 # file is contained within python egg, it is added with the egg
                 continue
             if typ in ('BINARY', 'EXTENSION', 'DEPENDENCY'):
+                if _is_libdynload_extension(typ, inm, fnm):
+                    # Place extensions that originate from python's
+                    # lib-dynload directory into _MEIPASS/lib-dynload
+                    # instead of directly into _MEIPASS
+                    inm = os.path.join('lib-dynload', inm)
                 if self.exclude_binaries and typ == 'EXTENSION':
                     self.dependencies.append((inm, fnm, typ))
                 elif not self.exclude_binaries or typ == 'DEPENDENCY':
@@ -734,6 +749,11 @@ class COLLECT(Target):
                or os.path.isabs(inm):
                 raise SystemExit('Security-Alert: try to store file outside '
                                  'of dist-directory. Aborting. %r' % inm)
+            if _is_libdynload_extension(typ, inm, fnm):
+                # Place extensions that originate from python's
+                # lib-dynload directory into _MEIPASS/lib-dynload
+                # instead of directly into _MEIPASS
+                inm = os.path.join('lib-dynload', inm)
             tofnm = os.path.join(self.name, inm)
             todir = os.path.dirname(tofnm)
             if not os.path.exists(todir):
