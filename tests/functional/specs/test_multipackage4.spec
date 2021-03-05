@@ -19,9 +19,13 @@ SCRIPT_DIR = 'multipackage-scripts'
 __testname__ = 'test_multipackage4'
 __testdep__ = 'multipackage4_B'
 
+__testdata__ = [(os.path.join(SCRIPT_DIR, 'secret.txt'), 'test_data')]
+
 a = Analysis([os.path.join(SCRIPT_DIR, __testname__ + '.py')],
+             datas=__testdata__,
              pathex=['.'])
 b = Analysis([os.path.join(SCRIPT_DIR, __testdep__ + '.py')],
+             datas=__testdata__,
              pathex=['.'])
 
 MERGE((b, __testdep__, os.path.join(__testdep__, __testdep__)),

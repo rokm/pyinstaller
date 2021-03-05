@@ -16,3 +16,13 @@ import getopt
 import ssl
 
 print('Hello World!')
+
+# try reading secret from a file in sub-directory
+import sys  # noqa: E402
+import os  # noqa: E402
+
+secret_file = os.path.join(sys._MEIPASS, 'test_data', 'secret.txt')
+with open(secret_file, 'r') as fp:
+    secret = fp.read().strip()
+print("Read secret from %s: %r" % (secret_file, secret))
+assert secret == 'Secret1234'

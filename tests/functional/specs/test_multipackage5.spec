@@ -21,11 +21,16 @@ __testname__ = 'test_multipackage5'
 __testdep__ = 'multipackage5_B'
 __testdep2__ = 'multipackage5_C'
 
+__testdata__ = [(os.path.join(SCRIPT_DIR, 'secret.txt'), 'test_data')]
+
 a = Analysis([os.path.join(SCRIPT_DIR, __testname__ + '.py')],
+             datas=__testdata__,
              pathex=['.'])
 b = Analysis([os.path.join(SCRIPT_DIR, __testdep__ + '.py')],
+             datas=__testdata__,
              pathex=['.'])
 c = Analysis([os.path.join(SCRIPT_DIR, __testdep2__ + '.py')],
+             datas=__testdata__,
              pathex=['.'])
 
 
@@ -72,7 +77,7 @@ coll = COLLECT( exeB,
         strip=False,
         upx=True,
         name=os.path.join('dist', __testdep__))
-        
+
 pyzC = PYZ(c.pure)
 exeC = EXE(pyzC,
           c.scripts,

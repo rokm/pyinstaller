@@ -19,9 +19,13 @@ SCRIPT_DIR = 'multipackage-scripts'
 __testname__ = 'test_multipackage3'
 __testdep__ = 'multipackage3_B'
 
+__testdata__ = [(os.path.join(SCRIPT_DIR, 'secret.txt'), 'test_data')]
+
 a = Analysis([os.path.join(SCRIPT_DIR, __testname__ + '.py')],
+             datas=__testdata__,
              pathex=['.'])
 b = Analysis([os.path.join(SCRIPT_DIR, __testdep__ + '.py')],
+             datas=__testdata__,
              pathex=['.'])
 
 MERGE((b, __testdep__, os.path.join(__testdep__)),
@@ -46,7 +50,7 @@ coll = COLLECT( exe,
         strip=False,
         upx=True,
         name=os.path.join('dist', __testname__ ))
-           
+
 pyzB = PYZ(b.pure)
 exeB = EXE(pyzB,
           b.scripts,
