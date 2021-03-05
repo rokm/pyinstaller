@@ -26,3 +26,7 @@ with open(secret_file, 'r') as fp:
     secret = fp.read().strip()
 print("Read secret from %s: %r" % (secret_file, secret))
 assert secret == 'Secret1234'
+
+# import numpy, which has several extensions in its package subdirectories
+import numpy  # noqa: E402, F401
+print("Imported numpy!")

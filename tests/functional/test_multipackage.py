@@ -1,6 +1,9 @@
 import pytest
 
+from PyInstaller.utils.tests import importorskip
 
+
+@importorskip('numpy')
 @pytest.mark.parametrize(
     "spec_file",
     (
