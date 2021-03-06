@@ -608,6 +608,7 @@ def test_pe_checksum(pyi_builder):
         assert header_sum.value == checksum.value
 
 
+@pytest.mark.large_data
 @pytest.mark.parametrize("num_files,file_size", [
     (5,    100),  # 5x100 MiB: sanity check
     (6,    512),  # 6x512 MiB: large archive; test entry offsets

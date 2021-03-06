@@ -604,3 +604,30 @@ def compiled_dylib(tmpdir, request):
         old_wd.chdir()
 
     return tmp_data_dir
+
+
+# Control skipping of tests according to command line option
+def pytest_addoption(parser):
+    parser.addoption(
+        "--enable-large-data", action="store_true", dest="large_data",
+        default=False, help="run tests with large generated data files"
+    )
+
+
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers",
+        "large_data: mark test as using large generated data files "
+        "and require it to be explicitly enabled via --enable-large-data "
+        "option."
+    )
+
+
+def pytest_collection_modifyitems(config, items):
+    if not config.getoption("--enable-large-data"):
+        # --large-data not given in cli; skip large_data tests
+        skip_large_data = pytest.mark.skip(
+            reason="must be enabled via --enable-large-data option")
+        for item in items:
+            if "large_data" in item.keywords:
+                item.add_marker(skip_large_data)
