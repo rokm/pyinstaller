@@ -606,3 +606,89 @@ def test_pe_checksum(pyi_builder):
             ctypes.byref(checksum)) == 0
 
         assert header_sum.value == checksum.value
+
+
+@pytest.mark.parametrize("num_files,file_size", [
+    (5,    100),  # 5x100 MiB: sanity check
+    (6,    512),  # 6x512 MiB: large archive; test entry offsets
+    (1, 3*1024),  # 1x3 GiB: large archive; test entry size
+])
+def test_large_data_files(pyi_builder, tmpdir, num_files, file_size):
+    """
+    Verify that large data files are correctly packged/unpacked in
+    onefile builds.
+    """
+    import hashlib
+
+    # The test is relevant only for onefile builds
+    if pyi_builder._mode != 'onefile':
+        pytest.skip('The test is relevant only to onefile builds.')
+
+    # Create data files
+    hashes = []
+    tmpdir.mkdir('src')
+    for i in range(num_files):
+        dst_filename = 'file{0}.dat'.format(i)
+        src_filename = tmpdir.join('src', dst_filename)
+        # Write file
+        with open(src_filename, 'wb') as fp:
+            fp.write(os.urandom(file_size*1024*1024))  # file_size in MiB
+        # Compute the file hash
+        with open(src_filename, "rb") as fp:
+            file_hash = hashlib.md5()
+            chunk = fp.read(8192)
+            while chunk:
+                file_hash.update(chunk)
+                chunk = fp.read(8192)
+            hashes.append((dst_filename, file_hash.hexdigest()))
+
+    # Write file hashes
+    hashes_filename = tmpdir.join('src', 'hashes.txt')
+    with open(hashes_filename, 'w') as fp:
+        for filename, hash_value in hashes:
+            fp.write("{0},{1}\n".format(filename, hash_value))
+
+    # Prepare data file argument for pyinstaller; Windows uses different
+    # separator character (semi-colon instead of colon)
+    add_data_args = []
+
+    def _create_entry(basename):
+        sep = ';' if is_win else ':'
+        filename = tmpdir.join('src', basename)
+        return str(filename) + sep + '.'
+
+    add_data_args += ['--add-data', _create_entry('hashes.txt')]
+    for filename, _ in hashes:
+        add_data_args += ['--add-data', _create_entry(filename)]
+
+    # Run the program
+    pyi_builder.test_source(
+        """
+        import sys
+        import os
+        import hashlib
+
+        # Read hashes from file
+        hashes = []
+        hashes_file = os.path.join(sys._MEIPASS, 'hashes.txt')
+        with open(hashes_file, "r") as fp:
+            for line in fp:
+                filename, hash_value = line.strip().split(',')
+                hashes.append((filename, hash_value))
+
+        # Validate data files
+        for filename, hash_value in hashes:
+            data_file = os.path.join(sys._MEIPASS, filename)
+            with open(data_file, "rb") as fp:
+                file_hash = hashlib.md5()
+                chunk = fp.read(8192)
+                while chunk:
+                    file_hash.update(chunk)
+                    chunk = fp.read(8192)
+            assert file_hash.hexdigest() == hash_value
+        """,
+        pyi_args=[
+            '--debug', 'bootloader',
+            *add_data_args
+        ]
+    )
