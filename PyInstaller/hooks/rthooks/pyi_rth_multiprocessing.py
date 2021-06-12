@@ -23,6 +23,27 @@ from subprocess import _args_from_interpreter_flags
 # so we need to set executable from sys._pyi_executable variable.
 multiprocessing.set_executable(sys._pyi_executable)
 
+# multiprocessing.spawn.get_command_line() still uses sys.executable
+# as argv[0]. We monkey-patch it with a wrapper that temporarily sets
+# sys.executable and restores it afterwards, in order to avoid any
+# corner cases tied to the value of argv[0].
+_spawn_get_command_line_orig = spawn.get_command_line
+
+
+def _spawn_get_command_line(*args, **kwargs):
+    old_executable = sys.executable
+    sys.executable = sys._pyi_executable
+    try:
+        ret = _spawn_get_command_line_orig(*args, **kwargs)
+    except Exception:
+        sys.executable = old_executable
+        raise
+    sys.executable = old_executable
+    return ret
+
+
+spawn.get_command_line = _spawn_get_command_line
+
 
 # prevent spawn from trying to read __main__ in from the main script
 multiprocessing.process.ORIGINAL_DIR = None
