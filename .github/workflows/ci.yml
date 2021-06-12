@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - 'develop'
+      - 'disable-sys-executable'
   pull_request:
     branches:
       - '**'
