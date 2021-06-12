@@ -45,6 +45,14 @@ sys.base_prefix = sys.prefix
 sys.base_exec_prefix = sys.exec_prefix
 
 
+# Set sys.executable to empty string. In case someone tries to blindly
+# use it in an attempt to run python command in a subprocess (naively
+# thinking it points to python interpreter executable), this should result
+# in an error instead of recursive spawning loop.
+sys._pyi_executable = sys.executable
+sys.executable = ''
+
+
 # Some packages behaves differently when running inside virtual environment.
 # E.g. IPython tries to append path VIRTUAL_ENV to sys.path.
 # For the frozen app we want to prevent this behavior.

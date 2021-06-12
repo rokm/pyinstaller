@@ -18,6 +18,12 @@ import multiprocessing
 import multiprocessing.spawn as spawn
 from subprocess import _args_from_interpreter_flags
 
+
+# PyInstaller's bootstrap script sets sys.executable to empty string,
+# so we need to set executable from sys._pyi_executable variable.
+multiprocessing.set_executable(sys._pyi_executable)
+
+
 # prevent spawn from trying to read __main__ in from the main script
 multiprocessing.process.ORIGINAL_DIR = None
 
