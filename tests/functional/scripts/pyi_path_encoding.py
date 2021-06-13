@@ -14,10 +14,10 @@
 
 import sys, os
 
-print("sys.executable:", ascii(sys.executable))
+print("sys._pyi_executable:", ascii(sys._pyi_executable))
 
-if not os.path.exists(sys.executable):
-    raise SystemExit("sys.executable does not exist.")
+if not os.path.exists(sys._pyi_executable):
+    raise SystemExit("sys._pyi_executable does not exist.")
 
 print("sys.argv[0]:", ascii(sys.argv[0]))
 

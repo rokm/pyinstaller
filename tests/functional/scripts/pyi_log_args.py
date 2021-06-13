@@ -13,7 +13,7 @@ import os
 import sys
 
 if len(sys.argv) > 1:
-    basedir = os.path.dirname(sys.executable)
+    basedir = os.path.dirname(sys._pyi_executable)
     # if script is inside .app package
     if os.path.basename(basedir) == 'MacOS':
         basedir = os.path.abspath(

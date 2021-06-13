@@ -55,7 +55,7 @@ class EventHandler(QObject):
 
 
 def main():
-    basedir = os.path.dirname(sys.executable)
+    basedir = os.path.dirname(sys._pyi_executable)
     # if script is inside .app package
     if os.path.basename(basedir) == 'MacOS':
         basedir = os.path.abspath(

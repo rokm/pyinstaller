@@ -23,11 +23,11 @@ def check_shortpathname(fn):
         print("ShortPathName: Expected %s, got %s" % (fn, lfn))
         raise SystemExit(-1)
 
-print("sys.executable:", ascii(sys.executable))
+print("sys.executable:", ascii(sys._pyi_executable))
 
-if not os.path.exists(sys.executable):
-    raise SystemExit("sys.executable does not exist.")
-check_shortpathname(sys.executable)
+if not os.path.exists(sys._pyi_executable):
+    raise SystemExit("sys._pyi_executable does not exist.")
+check_shortpathname(sys._pyi_executable)
 
 print("sys.argv[0]:", ascii(sys.argv[0]))
 
