@@ -44,7 +44,6 @@ def test_multiprocess_spawn_semaphore(pyi_builder, capfd):
         import sys
 
         from multiprocessing import set_start_method, Process, Semaphore
-        from multiprocessing import freeze_support
         from multiprocessing.util import log_to_stderr
 
         def test(s):
@@ -54,7 +53,6 @@ def test_multiprocess_spawn_semaphore(pyi_builder, capfd):
 
         if __name__ == '__main__':
             log_to_stderr()
-            freeze_support()
             set_start_method('spawn')
 
             print('In main')
@@ -90,7 +88,6 @@ def test_multiprocess_fork_semaphore(pyi_builder, capfd):
         import sys
 
         from multiprocessing import set_start_method, Process, Semaphore
-        from multiprocessing import freeze_support
         from multiprocessing.util import log_to_stderr
 
         def test(s):
@@ -100,7 +97,6 @@ def test_multiprocess_fork_semaphore(pyi_builder, capfd):
 
         if __name__ == '__main__':
             log_to_stderr()
-            freeze_support()
             set_start_method('fork')
 
             print('In main')
@@ -136,7 +132,6 @@ def test_multiprocess_forkserver_semaphore(pyi_builder, capfd):
         import sys
 
         from multiprocessing import set_start_method, Process, Semaphore
-        from multiprocessing import freeze_support
         from multiprocessing.util import log_to_stderr
 
         def test(s):
@@ -146,7 +141,6 @@ def test_multiprocess_forkserver_semaphore(pyi_builder, capfd):
 
         if __name__ == '__main__':
             log_to_stderr()
-            freeze_support()
             set_start_method('forkserver')
 
             print('In main')
@@ -187,7 +181,6 @@ def test_multiprocess_spawn_process(pyi_builder, capfd):
             print('In subprocess')
 
         print(sys.argv)
-        mp.freeze_support()
         mp.set_start_method('spawn')
 
         print('In main')
@@ -212,7 +205,6 @@ def test_multiprocess_spawn_pool(pyi_builder, capfd):
             print(s)
 
         print(sys.argv,)
-        mp.freeze_support()
         mp.set_start_method('spawn')
 
         print('In main')

@@ -26,7 +26,6 @@ class SendeventProcess(multiprocessing.Process):
 
 
 if __name__ == '__main__':
-    multiprocessing.freeze_support()
     print('main')
     resultQueue = multiprocessing.Queue()
     SendeventProcess(resultQueue)

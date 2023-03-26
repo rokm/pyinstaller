@@ -17,7 +17,6 @@ def f(x):
 
 
 if __name__ == '__main__':
-    multiprocessing.freeze_support()
     # Start 4 worker processes.
     pool = multiprocessing.Pool(processes=4)
     print('Evaluate "f(10)" asynchronously.')
