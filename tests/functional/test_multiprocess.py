@@ -180,13 +180,14 @@ def test_multiprocess_spawn_process(pyi_builder, capfd):
             time.sleep(1)
             print('In subprocess')
 
-        print(sys.argv)
-        mp.set_start_method('spawn')
+        if __name__ == '__main__':
+            print(sys.argv)
+            mp.set_start_method('spawn')
 
-        print('In main')
-        proc = mp.Process(target=test)
-        proc.start()
-        proc.join()
+            print('In main')
+            proc = mp.Process(target=test)
+            proc.start()
+            proc.join()
         """
     )
 
@@ -204,11 +205,12 @@ def test_multiprocess_spawn_pool(pyi_builder, capfd):
             time.sleep(1)
             print(s)
 
-        print(sys.argv,)
-        mp.set_start_method('spawn')
+        if __name__ == '__main__':
+            print(sys.argv,)
+            mp.set_start_method('spawn')
 
-        print('In main')
-        with mp.Pool() as p:
-            p.map(test, 'in pool')
+            print('In main')
+            with mp.Pool() as p:
+                p.map(test, 'in pool')
         """
     )
