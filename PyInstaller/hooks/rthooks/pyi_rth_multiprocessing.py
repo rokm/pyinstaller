@@ -14,11 +14,14 @@ def _pyi_rth_multiprocessing():
     import os
     import sys
 
+    import marshal
     import threading
     import multiprocessing
     import multiprocessing.spawn
 
     from subprocess import _args_from_interpreter_flags
+
+    import pyimod01_archive  # For CArchiveReader
 
     # Prevent `spawn` from trying to read `__main__` in from the main script
     multiprocessing.process.ORIGINAL_DIR = None
@@ -105,7 +108,43 @@ def _pyi_rth_multiprocessing():
         popen_spawn_posix.Popen = _SpawnPopen
         popen_forkserver.Popen = _ForkserverPopen
 
+    # Override search for entry-point script
+    _original_fixup_main_from_path = multiprocessing.spawn._fixup_main_from_path
+
+    def _fixup_main_from_path(main_path):
+        try:
+            return _original_fixup_main_from_path(main_path)
+        except FileNotFoundError:
+            pass
+
+        # If original `_fixup_main_from_path` failed with `FileNotFoundError`, this means that it requires access to
+        # entry-point script, which is unfortunately available only within the executable's PKG archive.
+        #
+        # Instantiate PKG reader...
+        # TODO: handle the case with side-loaded PKG!
+        pkg = pyimod01_archive.CArchiveReader(sys.executable)
+
+        # Retrieve and unmarshal entry-point's code object
+        script_name, _ = os.path.splitext(os.path.basename(main_path))
+        script_co = marshal.loads(pkg.extract(script_name))
+        del pkg
+
+        # Run the entry point as new main module. This is a dumbed-down equivalent of `runpy.run_path˙.
+        module_type = type(sys)  # Obtain `types.ModuleType` without importing `types`.
+        main_module = module_type("__mp_main__")
+        main_content = {}
+        exec(script_co, main_content)
+        main_module.__dict__.update(main_content)
+        sys.modules['__main__'] = sys.modules['__mp_main__'] = main_module
+
+    multiprocessing.spawn._fixup_main_from_path = _fixup_main_from_path
+
 
 # Run the hook function, then delete it. This prevents unnecessary pollution of the global namespace.
 _pyi_rth_multiprocessing()
 del _pyi_rth_multiprocessing
+
+# Auto-run `freeze_support` so that users don't have to worry about it.
+if True:
+    import multiprocessing
+    multiprocessing.freeze_support()
