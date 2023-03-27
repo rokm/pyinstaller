@@ -108,8 +108,24 @@ def _pyi_rth_multiprocessing():
         popen_spawn_posix.Popen = _SpawnPopen
         popen_forkserver.Popen = _ForkserverPopen
 
-    # Override search for entry-point script
+    # Override the search for entry-point script.
+    #
+    # If `multiprocessing` functionality was used in a module imported from entry-point script, the data dict passed to
+    # subprocess includes `init_main_from_name`, which is handled transparently by `multiprocessing` functions.
+    #
+    # If `multiprocessing` functionality was used in the entry-point script, things get complicated, because the
+    # parent program's `__main__` corresponds to the entry-point script while the subprocess' `__main__` corresponds to
+    # to this runtime-hook. On non-Windows, the data dict passed to subprocess includes `init_main_from_path`, which
+    # is used by `multiprocessing.spawn._fixup_main_from_path` to load the script file. However, in our frozen
+    # application, the entry-point script is available only as marshaled code object, stored in the PKG archive. So
+    # we need to override the `multiprocessing.spawn._fixup_main_from_path`
+    #
+    # The above situation is even more complicated on Windows, where `init_main_from_path` is not set for some reason.
+    # Therefore, we also need to override `multiprocessing.spawn.get_preparation_data` to post-process the data dict
+    # and set `init_main_from_path` if neither `init_main_from_path` nor `init_main_from_name` are set.
+
     _original_fixup_main_from_path = multiprocessing.spawn._fixup_main_from_path
+    _original_get_preparation_data = multiprocessing.spawn.get_preparation_data
 
     def _fixup_main_from_path(main_path):
         try:
@@ -137,7 +153,22 @@ def _pyi_rth_multiprocessing():
         main_module.__dict__.update(main_content)
         sys.modules['__main__'] = sys.modules['__mp_main__'] = main_module
 
+    def _get_preparation_data(name):
+        # Get original data.
+        d = _original_get_preparation_data(name)
+        if 'init_main_from_name' in d or 'init_main_from_path' in d:
+            return d
+
+        # This codepath should be hit on Windows when `multiprocessing` is used in the entry-point script.
+        main_module = sys.modules['__main__']
+        main_path = getattr(main_module, '__file__', None)
+        if main_path is not None:
+            d['init_main_from_path'] = os.path.normpath(main_path)
+
+        return d
+
     multiprocessing.spawn._fixup_main_from_path = _fixup_main_from_path
+    multiprocessing.spawn.get_preparation_data = _get_preparation_data
 
 
 # Run the hook function, then delete it. This prevents unnecessary pollution of the global namespace.
