@@ -119,20 +119,12 @@ pyi_pylib_load(struct PYI_CONTEXT *pyi_ctx)
     PYI_DEBUG("LOADER: loading Python shared library: %s\n", dll_fullpath);
 
     /* Load the shared libary */
-    pyi_ctx->python_dll = pyi_utils_dlopen(dll_fullpath);
-
-    if (pyi_ctx->python_dll == 0) {
-#ifdef _WIN32
-        wchar_t dll_fullpath_w[PYI_PATH_MAX];
-        pyi_win32_utf8_to_wcs(dll_fullpath, dll_fullpath_w, PYI_PATH_MAX);
-        PYI_WINERROR_W(L"LoadLibrary", L"Failed to load Python DLL '%ls'.\n", dll_fullpath_w);
-#else
-        PYI_ERROR("Failed to load Python shared library '%s': dlopen: %s\n", dll_fullpath, dlerror());
-#endif
+    pyi_ctx->python_dll = pyi_dylib_python_load(dll_fullpath, archive->python_version);
+    if (!pyi_ctx->python_dll) {
         return -1;
     }
 
-    return pyi_python_bind_functions(pyi_ctx->python_dll, archive->python_version);
+    return 0;
 }
 
 /*
@@ -145,7 +137,6 @@ pyi_pylib_start_python(const struct PYI_CONTEXT *pyi_ctx)
     PyConfig *config = NULL;
     PyStatus status;
     int ret = -1;
-    const int python_version = pyi_ctx->archive->python_version;
 
     /* Read run-time options */
     runtime_options = pyi_runtime_options_read(pyi_ctx);
@@ -157,7 +148,7 @@ pyi_pylib_start_python(const struct PYI_CONTEXT *pyi_ctx)
     /* Pre-initialize python. This ensures that PEP 540 UTF-8 mode is enabled
      * if necessary. */
     PYI_DEBUG("LOADER: pre-initializing embedded python interpreter...\n");
-    if (pyi_pyconfig_preinit_python(runtime_options) < 0) {
+    if (pyi_pyconfig_preinit_python(runtime_options, pyi_ctx) < 0) {
         PYI_ERROR("Failed to pre-initialize embedded python interpreter!\n");
         goto end;
     }
@@ -165,7 +156,7 @@ pyi_pylib_start_python(const struct PYI_CONTEXT *pyi_ctx)
     /* Allocate the config structure. Since underlying layout is specific to
      * python version, this also verifies that python version is supported. */
     PYI_DEBUG("LOADER: creating PyConfig structure...\n");
-    config = pyi_pyconfig_create(python_version);
+    config = pyi_pyconfig_create(pyi_ctx);
     if (config == NULL) {
         PYI_ERROR("Failed to allocate PyConfig structure! Unsupported python version?\n");
         goto end;
@@ -173,7 +164,7 @@ pyi_pylib_start_python(const struct PYI_CONTEXT *pyi_ctx)
 
     /* Initialize isolated configuration */
     PYI_DEBUG("LOADER: initializing interpreter configuration...\n");
-    PI_PyConfig_InitIsolatedConfig(config);
+    pyi_ctx->python_dll->PyConfig_InitIsolatedConfig(config);
 
     /* Set program name */
     PYI_DEBUG("LOADER: setting program name...\n");
@@ -205,7 +196,7 @@ pyi_pylib_start_python(const struct PYI_CONTEXT *pyi_ctx)
 
     /* Apply run-time options */
     PYI_DEBUG("LOADER: applying run-time options...\n");
-    if (pyi_pyconfig_set_runtime_options(config, python_version, runtime_options) < 0) {
+    if (pyi_pyconfig_set_runtime_options(config, runtime_options, pyi_ctx) < 0) {
         PYI_ERROR("Failed to set run-time options!\n");
         goto end;
     }
@@ -235,22 +226,22 @@ pyi_pylib_start_python(const struct PYI_CONTEXT *pyi_ctx)
     SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
 #endif
 
-    status = PI_Py_InitializeFromConfig(config);
+    status = pyi_ctx->python_dll->Py_InitializeFromConfig(config);
 
 #if defined(_WIN32) && defined(LAUNCH_DEBUG)
     SetErrorMode(0);
 #endif
 
-    if (PI_PyStatus_Exception(status)) {
+    if (pyi_ctx->python_dll->PyStatus_Exception(status)) {
         PYI_ERROR("Failed to start embedded python interpreter!\n");
         /* Dump exception information to stderr and exit the process with error code. */
-        PI_Py_ExitStatusException(status);
+        pyi_ctx->python_dll->Py_ExitStatusException(status);
     } else {
         ret = 0; /* Succeeded */
     }
 
 end:
-    pyi_pyconfig_free(config);
+    pyi_pyconfig_free(config, pyi_ctx);
     pyi_runtime_options_free(runtime_options);
     return ret;
 }
@@ -261,6 +252,7 @@ end:
 int
 pyi_pylib_import_modules(const struct PYI_CONTEXT *pyi_ctx)
 {
+    const struct PYTHON_DLL *python_dll = pyi_ctx->python_dll;
     const struct ARCHIVE *archive = pyi_ctx->archive;
     const struct TOC_ENTRY *toc_entry;
     unsigned char *data;
@@ -272,9 +264,9 @@ pyi_pylib_import_modules(const struct PYI_CONTEXT *pyi_ctx)
 
     /* TODO extract function pyi_char_to_pyobject */
 #ifdef _WIN32
-    meipass_obj = PI_PyUnicode_Decode(pyi_ctx->application_home_dir, strlen(pyi_ctx->application_home_dir), "utf-8", "strict");
+    meipass_obj = python_dll->PyUnicode_Decode(pyi_ctx->application_home_dir, strlen(pyi_ctx->application_home_dir), "utf-8", "strict");
 #else
-    meipass_obj = PI_PyUnicode_DecodeFSDefault(pyi_ctx->application_home_dir);
+    meipass_obj = python_dll->PyUnicode_DecodeFSDefault(pyi_ctx->application_home_dir);
 #endif
 
     if (!meipass_obj) {
@@ -282,7 +274,7 @@ pyi_pylib_import_modules(const struct PYI_CONTEXT *pyi_ctx)
         return -1;
     }
 
-    PI_PySys_SetObject("_MEIPASS", meipass_obj);
+    python_dll->PySys_SetObject("_MEIPASS", meipass_obj);
 
     PYI_DEBUG("LOADER: importing modules from PKG/CArchive\n");
 
@@ -297,7 +289,7 @@ pyi_pylib_import_modules(const struct PYI_CONTEXT *pyi_ctx)
         PYI_DEBUG("LOADER: extracted %s\n", toc_entry->name);
 
         /* Unmarshal the stored code object */
-        co = PI_PyMarshal_ReadObjectFromString((const char *)data, toc_entry->uncompressed_length);
+        co = python_dll->PyMarshal_ReadObjectFromString((const char *)data, toc_entry->uncompressed_length);
         free(data);
 
         if (co == NULL) {
@@ -305,15 +297,15 @@ pyi_pylib_import_modules(const struct PYI_CONTEXT *pyi_ctx)
             mod = NULL;
         } else {
             PYI_DEBUG("LOADER: running unmarshalled code object for module %s...\n", toc_entry->name);
-            mod = PI_PyImport_ExecCodeModule(toc_entry->name, co);
+            mod = python_dll->PyImport_ExecCodeModule(toc_entry->name, co);
             if (mod == NULL) {
                 PYI_ERROR("Module object for %s is NULL!\n", toc_entry->name);
             }
         }
 
-        if (PI_PyErr_Occurred()) {
-            PI_PyErr_Print();
-            PI_PyErr_Clear();
+        if (python_dll->PyErr_Occurred()) {
+            python_dll->PyErr_Print();
+            python_dll->PyErr_Clear();
         }
 
         /* Exit on error */
@@ -340,6 +332,7 @@ pyi_pylib_import_modules(const struct PYI_CONTEXT *pyi_ctx)
 int
 _pyi_pylib_install_pyz_entry(const struct PYI_CONTEXT *pyi_ctx, const struct TOC_ENTRY *toc_entry)
 {
+    const struct PYTHON_DLL *python_dll = pyi_ctx->python_dll;
     unsigned long long zlib_offset;
     PyObject *sys_path;
     PyObject *zlib_entry;
@@ -347,7 +340,7 @@ _pyi_pylib_install_pyz_entry(const struct PYI_CONTEXT *pyi_ctx, const struct TOC
     int rc = 0;
 
     /* Retrieve sys.path object; this returns borrowed reference! */
-    sys_path = PI_PySys_GetObject("path");
+    sys_path = python_dll->PySys_GetObject("path");
     if (sys_path == NULL) {
         PYI_ERROR("Installing PYZ: could not get sys.path object!\n");
         return -1;
@@ -355,20 +348,20 @@ _pyi_pylib_install_pyz_entry(const struct PYI_CONTEXT *pyi_ctx, const struct TOC
 
 #ifdef _WIN32
     /* Decode UTF-8 to PyUnicode */
-    archivename_obj = PI_PyUnicode_Decode(pyi_ctx->archive_filename, strlen(pyi_ctx->archive_filename), "utf-8", "strict");
+    archivename_obj = python_dll->PyUnicode_Decode(pyi_ctx->archive_filename, strlen(pyi_ctx->archive_filename), "utf-8", "strict");
 #else
     /* Decode locale-encoded filename to PyUnicode object using Python's
      * preferred decoding method for filenames. */
-    archivename_obj = PI_PyUnicode_DecodeFSDefault(pyi_ctx->archive_filename);
+    archivename_obj = python_dll->PyUnicode_DecodeFSDefault(pyi_ctx->archive_filename);
 #endif
 
     zlib_offset = pyi_ctx->archive->pkg_offset + toc_entry->offset;
-    zlib_entry = PI_PyUnicode_FromFormat("%U?%llu", archivename_obj, zlib_offset);
-    PI_Py_DecRef(archivename_obj);
+    zlib_entry = python_dll->PyUnicode_FromFormat("%U?%llu", archivename_obj, zlib_offset);
+    python_dll->Py_DecRef(archivename_obj);
 
-    rc = PI_PyList_Append(sys_path, zlib_entry);
+    rc = python_dll->PyList_Append(sys_path, zlib_entry);
 
-    PI_Py_DecRef(zlib_entry);
+    python_dll->Py_DecRef(zlib_entry);
 
     if (rc != 0) {
         PYI_ERROR("Failed to append PYZ entry to sys.path!\n");
@@ -407,16 +400,18 @@ pyi_pylib_install_pyz(const struct PYI_CONTEXT *pyi_ctx)
 void
 pyi_pylib_finalize(const struct PYI_CONTEXT *pyi_ctx)
 {
-    /* Ensure python library was loaded; otherwise PI_* function pointers
-     * are invalid, and we have nothing to do here. */
-    if (!pyi_ctx->python_symbols_loaded) {
+    const struct PYTHON_DLL *python_dll = pyi_ctx->python_dll;
+
+    /* Ensure python library was loaded and its function pointers are
+     * valid; otherwise, we have nothing to do here. */
+    if (!python_dll) {
         return;
     }
 
     /* Nothing to do if python interpreter was not initialized. Attempting
      * to flush streams using PyRun_SimpleStringFlags requires a valid
      * interpreter instance. */
-    if (PI_Py_IsInitialized() == 0) {
+    if (python_dll->Py_IsInitialized() == 0) {
         return;
     }
 
@@ -427,13 +422,13 @@ pyi_pylib_finalize(const struct PYI_CONTEXT *pyi_ctx)
     PYI_DEBUG("LOADER: manually flushing stdout and stderr...\n");
 
     /* sys.stdout.flush() */
-    PI_PyRun_SimpleStringFlags(
+    python_dll->PyRun_SimpleStringFlags(
         "import sys; sys.stdout.flush(); \
         (sys.__stdout__.flush if sys.__stdout__ \
         is not sys.stdout else (lambda: None))()", NULL);
 
     /* sys.stderr.flush() */
-    PI_PyRun_SimpleStringFlags(
+    python_dll->PyRun_SimpleStringFlags(
         "import sys; sys.stderr.flush(); \
         (sys.__stderr__.flush if sys.__stderr__ \
         is not sys.stderr else (lambda: None))()", NULL);
@@ -442,5 +437,5 @@ pyi_pylib_finalize(const struct PYI_CONTEXT *pyi_ctx)
 
     /* Finalize the interpreter. This calls all of the atexit functions. */
     PYI_DEBUG("LOADER: cleaning up Python interpreter...\n");
-    PI_Py_Finalize();
+    python_dll->Py_Finalize();
 }

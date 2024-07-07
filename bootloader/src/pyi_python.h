@@ -25,9 +25,6 @@
 #include <wchar.h>
 
 
-/* Bind all required functions from python shared library */
-int pyi_python_bind_functions(pyi_dylib_t dll, int python_version);
-
 /*
  * Python.h replacements.
  *
@@ -151,79 +148,93 @@ typedef struct _PyPreConfig PyPreConfig;
 typedef struct _PyConfig PyConfig;
 
 
-/* Py_ */
-PYI_EXTDECLPROC(void, Py_DecRef, (PyObject *))
-PYI_EXTDECLPROC(wchar_t *, Py_DecodeLocale, (const char *, size_t *))
-PYI_EXTDECLPROC(void, Py_ExitStatusException, (PyStatus))
-PYI_EXTDECLPROC(int, Py_Finalize, (void))
-PYI_EXTDECLPROC(PyStatus, Py_InitializeFromConfig, (PyConfig *))
-PYI_EXTDECLPROC(int, Py_IsInitialized, (void))
-PYI_EXTDECLPROC(PyStatus, Py_PreInitialize, (const PyPreConfig *))
+/* Bound functions from python shared library */
+struct PYTHON_DLL
+{
+    /* Shared library handle */
+    pyi_dylib_t handle;
 
-/* PyConfig_ */
-PYI_EXTDECLPROC(void, PyConfig_Clear, (PyConfig *))
-PYI_EXTDECLPROC(void, PyConfig_InitIsolatedConfig, (PyConfig *))
-PYI_EXTDECLPROC(PyStatus, PyConfig_Read, (PyConfig *))
-PYI_EXTDECLPROC(PyStatus, PyConfig_SetBytesString, (PyConfig *, wchar_t **, const char *))
-PYI_EXTDECLPROC(PyStatus, PyConfig_SetString, (PyConfig *, wchar_t **, const wchar_t *))
-PYI_EXTDECLPROC(PyStatus, PyConfig_SetWideStringList, (PyConfig *, PyWideStringList *, Py_ssize_t, wchar_t **))
+    /* Python version, e.g. 3.8 -> 308, 3.12 -> 312 */
+    int version;
 
-/* PyErr_ */
-PYI_EXTDECLPROC(void, PyErr_Clear, (void) )
-PYI_EXTDECLPROC(void, PyErr_Fetch, (PyObject **, PyObject **, PyObject **))
-PYI_EXTDECLPROC(void, PyErr_NormalizeException, (PyObject **, PyObject **, PyObject **))
-PYI_EXTDECLPROC(PyObject *, PyErr_Occurred, (void) )
-PYI_EXTDECLPROC(void, PyErr_Print, (void) )
-PYI_EXTDECLPROC(void, PyErr_Restore, (PyObject *, PyObject *, PyObject *))
+    /* Imported functions */
 
-/* PyEval */
-PYI_EXTDECLPROC(PyObject *, PyEval_EvalCode, (PyObject *, PyObject *, PyObject *))
+    /* Py_ */
+    void (*Py_DecRef) (PyObject *);
+    wchar_t *(*Py_DecodeLocale) (const char *, size_t *);
+    void (*Py_ExitStatusException) (PyStatus);
+    int (*Py_Finalize) (void);
+    PyStatus (*Py_InitializeFromConfig) (PyConfig *);
+    int (*Py_IsInitialized) (void);
+    PyStatus (*Py_PreInitialize) (const PyPreConfig *);
 
-/* PyImport_ */
-PYI_EXTDECLPROC(PyObject *, PyImport_AddModule, (const char *))
-PYI_EXTDECLPROC(PyObject *, PyImport_ExecCodeModule, (const char *, PyObject *))
-PYI_EXTDECLPROC(PyObject *, PyImport_ImportModule, (const char *))
+    /* PyConfig_ */
+    void (*PyConfig_Clear) (PyConfig *);
+    void (*PyConfig_InitIsolatedConfig) (PyConfig *);
+    PyStatus (*PyConfig_Read) (PyConfig *);
+    PyStatus (*PyConfig_SetBytesString) (PyConfig *, wchar_t **, const char *);
+    PyStatus (*PyConfig_SetString) (PyConfig *, wchar_t **, const wchar_t *);
+    PyStatus (*PyConfig_SetWideStringList) (PyConfig *, PyWideStringList *, Py_ssize_t, wchar_t **);
 
-/* PyList_ */
-PYI_EXTDECLPROC(int, PyList_Append, (PyObject *, PyObject *))
+    /* PyErr_ */
+    void (*PyErr_Clear) (void);
+    void (*PyErr_Fetch) (PyObject **, PyObject **, PyObject **);
+    void (*PyErr_NormalizeException) (PyObject **, PyObject **, PyObject **);
+    PyObject *(*PyErr_Occurred) (void);
+    void (*PyErr_Print) (void);
+    void (*PyErr_Restore) (PyObject *, PyObject *, PyObject *);
 
-/* PyMarshal_ */
-PYI_EXTDECLPROC(PyObject *, PyMarshal_ReadObjectFromString, (const char *, Py_ssize_t))
+    /* PyEval */
+    PyObject *(*PyEval_EvalCode) (PyObject *, PyObject *, PyObject *);
 
-/* PyMem_ */
-PYI_EXTDECLPROC(void, PyMem_RawFree, (void *))
+    /* PyImport_ */
+    PyObject *(*PyImport_AddModule) (const char *);
+    PyObject *(*PyImport_ExecCodeModule) (const char *, PyObject *);
+    PyObject *(*PyImport_ImportModule) (const char *);
 
-/* PyModule_ */
-PYI_EXTDECLPROC(PyObject *, PyModule_GetDict, (PyObject *))
+    /* PyList_ */
+    int (*PyList_Append) (PyObject *, PyObject *);
 
-/* PyObject_ */
-PYI_EXTDECLPROC(PyObject *, PyObject_CallFunction, (PyObject *, char *, ...))
-PYI_EXTDECLPROC(PyObject *, PyObject_CallFunctionObjArgs, (PyObject *, ...))
-PYI_EXTDECLPROC(PyObject *, PyObject_GetAttrString, (PyObject *, const char *))
-PYI_EXTDECLPROC(int, PyObject_SetAttrString, (PyObject *, char *, PyObject *))
-PYI_EXTDECLPROC(PyObject *, PyObject_Str, (PyObject *))
+    /* PyMarshal_ */
+    PyObject *(*PyMarshal_ReadObjectFromString) (const char *, Py_ssize_t);
 
-/* PyPreConfig_ */
-PYI_EXTDECLPROC(void, PyPreConfig_InitIsolatedConfig, (PyPreConfig *))
+    /* PyMem_ */
+    void (*PyMem_RawFree) (void *);
 
-/* PyRun_ */
-PYI_EXTDECLPROC(int, PyRun_SimpleStringFlags, (const char *, PyCompilerFlags *))
+    /* PyModule_ */
+    PyObject *(*PyModule_GetDict) (PyObject *);
 
-/* PyStatus_ */
-PYI_EXTDECLPROC(int, PyStatus_Exception, (PyStatus))
+    /* PyObject_ */
+    PyObject *(*PyObject_CallFunction) (PyObject *, char *, ...);
+    PyObject *(*PyObject_CallFunctionObjArgs) (PyObject *, ...);
+    PyObject *(*PyObject_GetAttrString) (PyObject *, const char *);
+    int (*PyObject_SetAttrString) (PyObject *, char *, PyObject *);
+    PyObject *(*PyObject_Str) (PyObject *);
 
-/* PySys_ */
-PYI_EXTDECLPROC(PyObject *, PySys_GetObject, (const char *))
-PYI_EXTDECLPROC(int, PySys_SetObject, (char *, PyObject *))
+    /* PyPreConfig_ */
+    void (*PyPreConfig_InitIsolatedConfig) (PyPreConfig *);
 
-/* PyUnicode_ */
-PYI_EXTDECLPROC(const char *, PyUnicode_AsUTF8, (PyObject *))
-PYI_EXTDECLPROC(PyObject *, PyUnicode_Decode, (const char *, Py_ssize_t, const char *, const char *))
-PYI_EXTDECLPROC(PyObject *, PyUnicode_DecodeFSDefault, (const char *))
-PYI_EXTDECLPROC(PyObject *, PyUnicode_FromFormat, (const char *, ...))
-PYI_EXTDECLPROC(PyObject *, PyUnicode_FromString, (const char *))
-PYI_EXTDECLPROC(PyObject *, PyUnicode_Join, (PyObject *, PyObject *))
-PYI_EXTDECLPROC(PyObject *, PyUnicode_Replace, (PyObject *, PyObject *, PyObject *, Py_ssize_t))
+    /* PyRun_ */
+    int (*PyRun_SimpleStringFlags) (const char *, PyCompilerFlags *);
 
+    /* PyStatus_ */
+    int (*PyStatus_Exception) (PyStatus);
+
+    /* PySys_ */
+    PyObject *(*PySys_GetObject) (const char *);
+    int (*PySys_SetObject) (char *, PyObject *);
+
+    /* PyUnicode_ */
+    const char *(*PyUnicode_AsUTF8) (PyObject *);
+    PyObject *(*PyUnicode_Decode) (const char *, Py_ssize_t, const char *, const char *);
+    PyObject *(*PyUnicode_DecodeFSDefault) (const char *);
+    PyObject *(*PyUnicode_FromFormat) (const char *, ...);
+    PyObject *(*PyUnicode_FromString) (const char *);
+    PyObject *(*PyUnicode_Join) (PyObject *, PyObject *);
+    PyObject *(*PyUnicode_Replace) (PyObject *, PyObject *, PyObject *, Py_ssize_t);
+};
+
+struct PYTHON_DLL *pyi_dylib_python_load(const char *filename, int python_version);
+void pyi_dylib_python_cleanup(struct PYTHON_DLL **dll_ref);
 
 #endif /* PYI_PYTHON_H */
