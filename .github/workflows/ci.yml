@@ -7,7 +7,7 @@ on:
     branches:
       - 'develop'
       - 'v4'
-      - 'bootloader-increased-pedantry'
+      - 'bootloader-function-tables'
   pull_request:
     branches:
       - '**'
