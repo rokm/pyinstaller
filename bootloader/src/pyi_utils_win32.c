@@ -418,20 +418,10 @@ pyi_recursive_rmdir(const char *dir_path)
 \**********************************************************************/
 /* Load shared/dynamic library */
 pyi_dylib_t
-pyi_utils_dlopen(const char *filename)
+pyi_utils_dlopen(const wchar_t *filename)
 {
-    wchar_t *filename_w;
-    pyi_dylib_t handle;
-
-    /* Convert UTF-8 to wide-char */
-    filename_w = pyi_win32_utf8_to_wcs(filename, NULL, 0);
-
     /* Load shared library */
-    handle = LoadLibraryExW(filename_w, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
-
-    free(filename_w);
-
-    return handle;
+    return LoadLibraryExW(filename_w, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
 }
 
 /* Unload shared library by closing its handle */

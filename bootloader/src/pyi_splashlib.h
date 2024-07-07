@@ -75,53 +75,70 @@ typedef enum
     TCL_QUEUE_MARK
 } Tcl_QueuePosition;
 
-/**
- * Bound functions from Tcl/Tk
- */
-/* Tcl Initialization/Destruction */
-PYI_EXTDECLPROC(int, Tcl_Init, (Tcl_Interp *))
-PYI_EXTDECLPROC(Tcl_Interp*, Tcl_CreateInterp, (void))
-PYI_EXTDECLPROC(void, Tcl_FindExecutable, (const char *))
-PYI_EXTDECLPROC(int, Tcl_DoOneEvent, (int))
-PYI_EXTDECLPROC(void, Tcl_Finalize, (void))
-PYI_EXTDECLPROC(void, Tcl_FinalizeThread, (void))
-PYI_EXTDECLPROC(void, Tcl_DeleteInterp, (Tcl_Interp *))
 
-/* Threading */
-PYI_EXTDECLPROC(int, Tcl_CreateThread, (Tcl_ThreadId *, Tcl_ThreadCreateProc *, ClientData, int, int))
-PYI_EXTDECLPROC(Tcl_ThreadId, Tcl_GetCurrentThread, (void))
-PYI_EXTDECLPROC(int, Tcl_JoinThread, (Tcl_ThreadId, int *))
-PYI_EXTDECLPROC(void, Tcl_MutexLock, (Tcl_Mutex *))
-PYI_EXTDECLPROC(void, Tcl_MutexUnlock, (Tcl_Mutex *))
-PYI_EXTDECLPROC(void, Tcl_MutexFinalize, (Tcl_Mutex *))
-PYI_EXTDECLPROC(void, Tcl_ConditionFinalize, (Tcl_Condition *))
-PYI_EXTDECLPROC(void, Tcl_ConditionNotify, (Tcl_Condition *))
-PYI_EXTDECLPROC(void, Tcl_ConditionWait, (Tcl_Condition *, Tcl_Mutex *, const Tcl_Time *))
-PYI_EXTDECLPROC(void, Tcl_ThreadQueueEvent, (Tcl_ThreadId, Tcl_Event *, Tcl_QueuePosition))
-PYI_EXTDECLPROC(void, Tcl_ThreadAlert, (Tcl_ThreadId threadId))
+/* Tcl shared library and bound functions imported from it. */
+struct TCL_DLL
+{
+    /* Shared library handle */
+    pyi_dylib_t handle;
 
-/* Tcl interpreter manipulation */
-PYI_EXTDECLPROC(const char*, Tcl_GetVar2, (Tcl_Interp *, const char *, const char *, int))
-PYI_EXTDECLPROC(const char*, Tcl_SetVar2, (Tcl_Interp *, const char *, const char *, const char *, int))
-PYI_EXTDECLPROC(Tcl_Command, Tcl_CreateObjCommand, (Tcl_Interp *, const char *, Tcl_ObjCmdProc *, ClientData, Tcl_CmdDeleteProc *))
-PYI_EXTDECLPROC(char *, Tcl_GetString, (Tcl_Obj *))
-PYI_EXTDECLPROC(Tcl_Obj *, Tcl_NewStringObj, (const char *, int))
-PYI_EXTDECLPROC(Tcl_Obj *, Tcl_NewByteArrayObj, (const unsigned char *, int))
-PYI_EXTDECLPROC(Tcl_Obj *, Tcl_SetVar2Ex, (Tcl_Interp *, const char *, const char *, Tcl_Obj *, int))
-PYI_EXTDECLPROC(Tcl_Obj *, Tcl_GetObjResult, (Tcl_Interp *))
+    /* Imported functions */
 
-/* Evaluating scripts and memory functions */
-PYI_EXTDECLPROC(int, Tcl_EvalFile, (Tcl_Interp *, const char *))
-PYI_EXTDECLPROC(int, Tcl_EvalEx, (Tcl_Interp *, const char *, int, int))
-PYI_EXTDECLPROC(int, Tcl_EvalObjv, (Tcl_Interp *, int, Tcl_Obj * const[], int))
-PYI_EXTDECLPROC(char *, Tcl_Alloc, (unsigned int))
-PYI_EXTDECLPROC(void, Tcl_Free, (char *))
+    /* Tcl Initialization/Destruction */
+    int (*Tcl_Init) (Tcl_Interp *);
+    Tcl_Interp *(*Tcl_CreateInterp) (void);
+    void (*Tcl_FindExecutable) (const char *);
+    int (*Tcl_DoOneEvent) (int);
+    void (*Tcl_Finalize) (void);
+    void (*Tcl_FinalizeThread) (void);
+    void (*Tcl_DeleteInterp) (Tcl_Interp *);
 
-/* Tk */
-PYI_EXTDECLPROC(int, Tk_Init, (Tcl_Interp *))
-PYI_EXTDECLPROC(int, Tk_GetNumMainWindows, (void))
+    /* Threading */
+    int (*Tcl_CreateThread) (Tcl_ThreadId *, Tcl_ThreadCreateProc *, ClientData, int, int);
+    Tcl_ThreadId (*Tcl_GetCurrentThread) (void);
+    int (*Tcl_JoinThread) (Tcl_ThreadId, int *);
+    void (*Tcl_MutexLock) (Tcl_Mutex *);
+    void (*Tcl_MutexUnlock) (Tcl_Mutex *);
+    void (*Tcl_MutexFinalize) (Tcl_Mutex *);
+    void (*Tcl_ConditionFinalize) (Tcl_Condition *);
+    void (*Tcl_ConditionNotify) (Tcl_Condition *);
+    void (*Tcl_ConditionWait) (Tcl_Condition *, Tcl_Mutex *, const Tcl_Time *);
+    void (*Tcl_ThreadQueueEvent) (Tcl_ThreadId, Tcl_Event *, Tcl_QueuePosition);
+    void (*Tcl_ThreadAlert) (Tcl_ThreadId);
 
-/* Bind all required functions from Tcl and Tk shared libraries */
-int pyi_splashlib_bind_functions(pyi_dylib_t dll_tcl, pyi_dylib_t dll_tk);
+    /* Tcl interpreter manipulation */
+    const char *(*Tcl_GetVar2) (Tcl_Interp *, const char *, const char *, int);
+    const char *(*Tcl_SetVar2) (Tcl_Interp *, const char *, const char *, const char *, int);
+    Tcl_Command (*Tcl_CreateObjCommand) (Tcl_Interp *, const char *, Tcl_ObjCmdProc *, ClientData, Tcl_CmdDeleteProc *);
+    char *(*Tcl_GetString) (Tcl_Obj *);
+    Tcl_Obj *(*Tcl_NewStringObj) (const char *, int);
+    Tcl_Obj *(*Tcl_NewByteArrayObj) (const unsigned char *, int);
+    Tcl_Obj *(*Tcl_SetVar2Ex) (Tcl_Interp *, const char *, const char *, Tcl_Obj *, int);
+    Tcl_Obj *(*Tcl_GetObjResult) (Tcl_Interp *);
+
+    /* Evaluating scripts and memory functions */
+    int (*Tcl_EvalFile) (Tcl_Interp *, const char *);
+    int (*Tcl_EvalEx) (Tcl_Interp *, const char *, int, int);
+    int (*Tcl_EvalObjv) (Tcl_Interp *, int, Tcl_Obj * const[], int);
+    char *(*Tcl_Alloc) (unsigned int);
+    void (*Tcl_Free) (char *);
+};
+
+struct TCL_DLL *pyi_dylib_tcl_load(const char *filename);
+void pyi_dylib_tcl_cleanup(struct TCL_DLL **dll_ref);
+
+/* Tk shared library and bound functions imported from it. */
+struct TK_DLL
+{
+    /* Shared library handle */
+    pyi_dylib_t handle;
+
+    /* Imported functions */
+    int (*Tk_Init) (Tcl_Interp *);
+    int (*Tk_GetNumMainWindows) (void);
+};
+
+struct TK_DLL *pyi_dylib_tk_load(const char *filename);
+void pyi_dylib_tk_cleanup(struct TK_DLL **dll_ref);
 
 #endif /* PYI_SPLASHLIB_H */

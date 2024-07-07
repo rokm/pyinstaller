@@ -11,12 +11,6 @@
  * ****************************************************************************
  */
 
-#ifdef _WIN32
-    #include <windows.h> /* HMODULE */
-#else
-    #include <dlfcn.h> /* dlsym */
-#endif
-#include <stddef.h> /* ptrdiff_t */
 #include <stdlib.h>
 
 #include "pyi_global.h"
@@ -28,6 +22,9 @@ struct PYTHON_DLL *
 pyi_dylib_python_load(const char *filename, int python_version)
 {
     struct PYTHON_DLL *dll;
+#ifdef _WIN32
+    wchar_t filename_w[PYI_PATH_MAX];
+#endif
 
     /* Allocate */
     dll = (struct PYTHON_DLL *)calloc(1, sizeof(struct PYTHON_DLL));
@@ -36,38 +33,46 @@ pyi_dylib_python_load(const char *filename, int python_version)
         return NULL;
     }
 
-    /* Load shared library */
-    dll->handle = pyi_utils_dlopen(filename);
-    if (dll->handle == NULL) {
-#ifdef _WIN32
-        wchar_t filename_w[PYI_PATH_MAX];
-        pyi_win32_utf8_to_wcs(filename, filename_w, PYI_PATH_MAX);
-        PYI_WINERROR_W(L"LoadLibrary", L"Failed to load Python shared library '%ls'.\n", filename_w);
-#else
-        PYI_ERROR("Failed to load Python shared library '%s': dlopen: %s\n", filename, dlerror());
-#endif
-        goto cleanup;
-    }
-
     /* Store version info */
     dll->version = python_version;
 
-#if defined(_WIN32)
-    /* Note: since function names are always in ASCII, we can safely use %hs
-     * to format ANSI string (obtained via stringification) into wide-char
-     * message string. This alleviates the need for set of macros that would
-     * achieve wide-char stringification of the function name. */
+#ifdef _WIN32
+    /* UTF8 -> wide-char */
+    if (!pyi_win32_utf8_to_wcs(filename, wchar_t, PYI_PATH_MAX)) {
+        goto cleanup;
+    }
+
+    /* Load shared library */
+    dll->handle = pyi_utils_dlopen(filename_w); /* Wrapper for LoadLibrary() */
+    if (!dll->handle) {
+        PYI_WINERROR_W(L"LoadLibrary", L"Failed to load Python shared library '%ls'.\n", filename_w);
+        goto cleanup;
+    }
+
+    /* Extend PYI_EXT_FUNC_BIND() macro with error handling.
+     *
+     * Function names always contain ASCII characters, so we can safely
+     * format ANSI string (obtained via stringification) into wide-char
+     * message string. */
     #define _IMPORT_FUNCTION(name) \
-        *(FARPROC *)(&(dll->name)) = GetProcAddress(dll->handle, #name); \
+        PYI_EXT_FUNC_BIND(dll, name); \
         if (!dll->name) { \
-            PYI_WINERROR_W(L"GetProcAddress", L"Failed to import function %hs from Python shared library\n", #name); \
+            PYI_WINERROR_W(L"GetProcAddress", L"Failed to import symbol %hs from Python shared library.\n", #name); \
             goto cleanup; \
         }
 #else
+    /* Load shared library */
+    dll->handle = pyi_utils_dlopen(filename); /* Wrapper for dlopen() */
+    if (dll->handle == NULL) {
+        PYI_ERROR("Failed to load Python shared library '%s'. dlopen: %s\n", filename, dlerror());
+        goto cleanup;
+    }
+
+    /* Extend PYI_EXT_FUNC_BIND() with error handling. */
     #define _IMPORT_FUNCTION(name) \
-        *(void **)(&(dll->name)) = dlsym(dll->handle, #name); \
+        PYI_EXT_FUNC_BIND(dll, name); \
         if (!dll->name) { \
-            PYI_PERROR("dlsym", "Failed to import function " #name " from Python shared library\n"); \
+            PYI_ERROR("dlsym", "Failed to import symbol %s from Python shared library. dlsym: %s\n", #name, dlerror()); \
             goto cleanup; \
         }
 #endif
@@ -156,7 +161,11 @@ void pyi_dylib_python_cleanup(struct PYTHON_DLL **dll_ref)
         return;
     }
 
-    pyi_utils_dlclose(dll->handle);
+    if (pyi_utils_dlclose(dll->handle) < 0) {
+        PYI_DEBUG("LOADER: failed to unload Python shared library!\n");
+    } else {
+        PYI_DEBUG("LOADER: unloaded Python shared library.\n");
+    }
 
     free(dll);
 }

@@ -114,16 +114,10 @@ struct SPLASH_CONTEXT
     char *requirements;
     int requirements_len;
 
-    /* Flag indicating that Tcl/Tk shared libraries were successfully
-     * loaded and that required symbols have been loaded and bound. This
-     * is primarily used during finalization to properly handle tear-down
-     * of partially-initialized splash screen. */
-    bool dlls_fully_loaded;
-
-    /* Keep the handles to loaded shared libraries, in order to close them
-     * during finalization. */
-    pyi_dylib_t dll_tcl;
-    pyi_dylib_t dll_tk;
+    /* Structures that encapsulate loaded Tcl and Tk shared library and
+     * pointers to imported functions. */
+    struct TCL_DLL *tcl_dll;
+    struct TK_DLL *tk_dll;
 };
 
 typedef int (pyi_splash_event_proc)(struct SPLASH_CONTEXT *, const void *);
