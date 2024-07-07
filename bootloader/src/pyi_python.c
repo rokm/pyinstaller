@@ -37,7 +37,7 @@ pyi_dylib_python_load(const char *filename, int python_version)
     /* Load shared library */
 #ifdef _WIN32
     /* Convert filename from UTF-8 to wide-char */
-    if (!pyi_win32_utf8_to_wcs(filename, wchar_t, PYI_PATH_MAX)) {
+    if (!pyi_win32_utf8_to_wcs(filename, filename_w, PYI_PATH_MAX)) {
         goto cleanup;
     }
 
@@ -71,7 +71,7 @@ pyi_dylib_python_load(const char *filename, int python_version)
     #define _IMPORT_FUNCTION(name) \
         PYI_EXT_FUNC_BIND(dll, name); \
         if (!dll->name) { \
-            PYI_ERROR("dlsym", "Failed to import symbol %s from Python shared library. dlsym: %s\n", #name, dlerror()); \
+            PYI_ERROR("Failed to import symbol %s from Python shared library. dlsym: %s\n", #name, dlerror()); \
             goto cleanup; \
         }
 #endif

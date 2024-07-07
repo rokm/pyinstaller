@@ -172,7 +172,7 @@ pyi_launch_extract_files_from_archive(struct PYI_CONTEXT *pyi_ctx)
  * Returns a copy of message string or NULL. Must be freed by caller.
  */
 static char *
-_pyi_extract_exception_message(PyObject *pvalue, PYTHON_DLL *python_dll)
+_pyi_extract_exception_message(PyObject *pvalue, const struct PYTHON_DLL *python_dll)
 {
     PyObject *pvalue_str;
     const char *pvalue_cchar;
@@ -213,7 +213,8 @@ _pyi_extract_exception_traceback(
     PyObject *ptype,
     PyObject *pvalue,
     PyObject *ptraceback,
-    int fmt_mode
+    int fmt_mode,
+    const struct PYTHON_DLL *python_dll
 )
 {
     PyObject *module;
@@ -221,49 +222,49 @@ _pyi_extract_exception_traceback(
 
     /* Attempt to get a full traceback, source lines will only
      * be available with --noarchive option */
-    module = PI_PyImport_ImportModule("traceback");
+    module = python_dll->PyImport_ImportModule("traceback");
     if (module != NULL) {
-        PyObject *func = PI_PyObject_GetAttrString(module, "format_exception");
+        PyObject *func = python_dll->PyObject_GetAttrString(module, "format_exception");
         if (func) {
             PyObject *tb = NULL;
             PyObject *tb_str = NULL;
             const char *tb_cchar = NULL;
 
-            tb = PI_PyObject_CallFunctionObjArgs(func, ptype, pvalue, ptraceback, NULL);
+            tb = python_dll->PyObject_CallFunctionObjArgs(func, ptype, pvalue, ptraceback, NULL);
             if (tb != NULL) {
                 if (fmt_mode == PYI_TB_FMT_REPR) {
                     /* Represent the list as string */
-                    tb_str = PI_PyObject_Str(tb);
+                    tb_str = python_dll->PyObject_Str(tb);
                 } else {
                     /* Join the list using empty string */
-                    PyObject *tb_empty = PI_PyUnicode_FromString("");
-                    tb_str = PI_PyUnicode_Join(tb_empty, tb);
-                    PI_Py_DecRef(tb_empty);
+                    PyObject *tb_empty = python_dll->PyUnicode_FromString("");
+                    tb_str = python_dll->PyUnicode_Join(tb_empty, tb);
+                    python_dll->Py_DecRef(tb_empty);
                     if (fmt_mode == PYI_TB_FMT_CRLF) {
                         /* Replace LF with CRLF */
-                        PyObject *lf = PI_PyUnicode_FromString("\n");
-                        PyObject *crlf = PI_PyUnicode_FromString("\r\n");
-                        PyObject *tb_str_crlf = PI_PyUnicode_Replace(tb_str, lf, crlf, -1);
-                        PI_Py_DecRef(lf);
-                        PI_Py_DecRef(crlf);
+                        PyObject *lf = python_dll->PyUnicode_FromString("\n");
+                        PyObject *crlf = python_dll->PyUnicode_FromString("\r\n");
+                        PyObject *tb_str_crlf = python_dll->PyUnicode_Replace(tb_str, lf, crlf, -1);
+                        python_dll->Py_DecRef(lf);
+                        python_dll->Py_DecRef(crlf);
                         /* Swap */
-                        PI_Py_DecRef(tb_str);
+                        python_dll->Py_DecRef(tb_str);
                         tb_str = tb_str_crlf;
                     }
                 }
             }
             if (tb_str != NULL) {
-                tb_cchar = PI_PyUnicode_AsUTF8(tb_str);
+                tb_cchar = python_dll->PyUnicode_AsUTF8(tb_str);
                 if (tb_cchar) {
                     retval = strdup(tb_cchar);
                 }
             }
-            PI_Py_DecRef(tb);
-            PI_Py_DecRef(tb_str);
+            python_dll->Py_DecRef(tb);
+            python_dll->Py_DecRef(tb_str);
         }
-        PI_Py_DecRef(func);
+        python_dll->Py_DecRef(func);
     }
-    PI_Py_DecRef(module);
+    python_dll->Py_DecRef(module);
 
     return retval;
 }
@@ -278,7 +279,7 @@ static int
 _pyi_launch_run_scripts(const struct PYI_CONTEXT *pyi_ctx)
 {
     const struct ARCHIVE *archive = pyi_ctx->archive;
-    struct PYTHON_DLL *python_dll = pyi_ctx->python_dll;
+    const struct PYTHON_DLL *python_dll = pyi_ctx->python_dll;
     unsigned char *data;
     char buf[PYI_PATH_MAX];
     const struct TOC_ENTRY *toc_entry;
@@ -375,7 +376,7 @@ _pyi_launch_run_scripts(const struct PYI_CONTEXT *pyi_ctx)
                 /* Traceback is disabled via option */
                 msg_tb = strdup("Traceback is disabled via bootloader option.");
             } else {
-                msg_tb = _pyi_extract_exception_traceback(ptype, pvalue, ptraceback, fmt_mode);
+                msg_tb = _pyi_extract_exception_traceback(ptype, pvalue, ptraceback, fmt_mode, python_dll);
             }
             python_dll->PyErr_Restore(ptype, pvalue, ptraceback);
 #endif /* defined(WINDOWED) */

@@ -102,7 +102,7 @@
                 void *obj_ptr; \
             } alias; \
             /* Store object pointer */ \
-            alias.obj_ptr = dlsym(dll, #name); \
+            alias.obj_ptr = dlsym(dll_struct->handle, #name); \
             /* Read function pointer */ \
             dll_struct->name = alias.func_ptr; \
         } while(0)

@@ -41,7 +41,11 @@ int pyi_create_parent_directory_tree(const struct PYI_CONTEXT *pyi_ctx, const ch
 int pyi_copy_file(const char *src_filename, const char *dest_filename);
 
 /* Shared library loading. */
+#if defined(_WIN32)
+pyi_dylib_t pyi_utils_dlopen(const wchar_t *filename);
+#else
 pyi_dylib_t pyi_utils_dlopen(const char *filename);
+#endif
 int pyi_utils_dlclose(pyi_dylib_t handle);
 
 /* Child process */

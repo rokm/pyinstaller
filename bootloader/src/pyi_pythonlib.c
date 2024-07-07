@@ -100,12 +100,12 @@ pyi_pylib_load(struct PYI_CONTEXT *pyi_ctx)
      * CRT update not installed. */
     if (1) {
         char ucrtpath[PYI_PATH_MAX];
-        if (pyi_path_join(ucrtpath, pyi_ctx->application_home_dir, "ucrtbase.dll") == NULL) {
-            PYI_ERROR("Path of ucrtbase.dll (%s) and its name exceed buffer size (%d)\n", pyi_ctx->application_home_dir, PYI_PATH_MAX);
-        }
-        if (pyi_path_exists(ucrtpath)) {
-            PYI_DEBUG("LOADER: ucrtbase.dll found: %s\n", ucrtpath);
-            pyi_utils_dlopen(ucrtpath);
+        if (pyi_path_join(ucrtpath, pyi_ctx->application_home_dir, "ucrtbase.dll") != NULL && pyi_path_exists(ucrtpath)) {
+            wchar_t ucrtpath_w[PYI_PATH_MAX];
+            if (pyi_win32_utf8_to_wcs(ucrtpath, ucrtpath_w, PYI_PATH_MAX) != NULL) {
+                PYI_DEBUG_W(L"LOADER: ucrtbase.dll found: %ls\n", ucrtpath_w);
+                pyi_utils_dlopen(ucrtpath_w);
+            }
         }
     }
 #endif
