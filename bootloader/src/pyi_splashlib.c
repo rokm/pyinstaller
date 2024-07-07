@@ -15,13 +15,6 @@
  * tcl.h and tk.h replacement
  */
 
-#ifdef _WIN32
-    #include <windows.h>  /* HMODULE */
-#else
-    #include <dlfcn.h>  /* dlsym */
-#endif
-#include <stdlib.h>
-
 /* PyInstaller headers */
 #include "pyi_global.h"
 #include "pyi_splashlib.h"
@@ -33,6 +26,9 @@ struct TCL_DLL *
 pyi_dylib_tcl_load(const char *filename)
 {
     struct TCL_DLL *dll;
+#ifdef _WIN32
+    wchar_t filename_w[PYI_PATH_MAX];
+#endif
 
     /* Allocate */
     dll = (struct TCL_DLL *)calloc(1, sizeof(struct TCL_DLL));
@@ -42,34 +38,43 @@ pyi_dylib_tcl_load(const char *filename)
     }
 
     /* Load shared library */
-    dll->handle = pyi_utils_dlopen(filename);
-    if (dll->handle == NULL) {
 #ifdef _WIN32
-        wchar_t filename_w[PYI_PATH_MAX];
-        pyi_win32_utf8_to_wcs(filename, filename_w, PYI_PATH_MAX);
-        PYI_WINERROR_W(L"LoadLibrary", L"Failed to load Tcl shared library '%ls'.\n", filename_w);
-#else
-        PYI_ERROR("Failed to load Tcl shared library '%s': dlopen: %s\n", filename, dlerror());
-#endif
+    /* Convert filename from UTF-8 to wide-char */
+    if (!pyi_win32_utf8_to_wcs(filename, wchar_t, PYI_PATH_MAX)) {
         goto cleanup;
     }
 
-#if defined(_WIN32)
-    /* Note: since function names are always in ASCII, we can safely use %hs
-     * to format ANSI string (obtained via stringification) into wide-char
-     * message string. This alleviates the need for set of macros that would
-     * achieve wide-char stringification of the function name. */
+    /* Load */
+    dll->handle = pyi_utils_dlopen(filename_w); /* Wrapper for LoadLibrary() */
+    if (!dll->handle) {
+        PYI_WINERROR_W(L"LoadLibrary", L"Failed to load Tcl shared library '%ls'.\n", filename_w);
+        goto cleanup;
+    }
+
+    /* Extend PYI_EXT_FUNC_BIND() macro with error handling.
+     *
+     * Function names always contain ASCII characters, so we can safely
+     * format ANSI string (obtained via stringification) into wide-char
+     * message string. */
     #define _IMPORT_FUNCTION(name) \
-        *(FARPROC *)(&(dll->name)) = GetProcAddress(dll->handle, #name); \
+        PYI_EXT_FUNC_BIND(dll, name); \
         if (!dll->name) { \
-            PYI_WINERROR_W(L"GetProcAddress", L"Failed to import symbol %hs from Tcl shared library\n", #name); \
+            PYI_WINERROR_W(L"GetProcAddress", L"Failed to import symbol %hs from Tcl shared library.\n", #name); \
             goto cleanup; \
         }
 #else
+    /* Load */
+    dll->handle = pyi_utils_dlopen(filename); /* Wrapper for dlopen() */
+    if (dll->handle == NULL) {
+        PYI_ERROR("Failed to load Tcl shared library '%s'. dlopen: %s\n", filename, dlerror());
+        goto cleanup;
+    }
+
+    /* Extend PYI_EXT_FUNC_BIND() with error handling. */
     #define _IMPORT_FUNCTION(name) \
-        *(void **)(&(dll->name)) = dlsym(dll->handle, #name); \
+        PYI_EXT_FUNC_BIND(dll, name); \
         if (!dll->name) { \
-            PYI_PERROR("dlsym", "Failed to import symbol %s from Tcl shared library: dlsym: %s\n", #name, dlerror()); \
+            PYI_ERROR("dlsym", "Failed to import symbol %s from Tcl shared library. dlsym: %s\n", #name, dlerror()); \
             goto cleanup; \
         }
 #endif
@@ -148,6 +153,9 @@ struct TK_DLL *
 pyi_dylib_tk_load(const char *filename)
 {
     struct TK_DLL *dll;
+#ifdef _WIN32
+    wchar_t filename_w[PYI_PATH_MAX];
+#endif
 
     /* Allocate */
     dll = (struct TK_DLL *)calloc(1, sizeof(struct TK_DLL));
@@ -157,34 +165,43 @@ pyi_dylib_tk_load(const char *filename)
     }
 
     /* Load shared library */
-    dll->handle = pyi_utils_dlopen(filename);
-    if (dll->handle == NULL) {
 #ifdef _WIN32
-        wchar_t filename_w[PYI_PATH_MAX];
-        pyi_win32_utf8_to_wcs(filename, filename_w, PYI_PATH_MAX);
-        PYI_WINERROR_W(L"LoadLibrary", L"Failed to load Tk shared library '%ls'.\n", filename_w);
-#else
-        PYI_ERROR("Failed to load Tk shared library '%s': dlopen: %s\n", filename, dlerror());
-#endif
+    /* Convert filename from UTF-8 to wide-char */
+    if (!pyi_win32_utf8_to_wcs(filename, wchar_t, PYI_PATH_MAX)) {
         goto cleanup;
     }
 
-#if defined(_WIN32)
-    /* Note: since function names are always in ASCII, we can safely use %hs
-     * to format ANSI string (obtained via stringification) into wide-char
-     * message string. This alleviates the need for set of macros that would
-     * achieve wide-char stringification of the function name. */
+    /* Load */
+    dll->handle = pyi_utils_dlopen(filename_w); /* Wrapper for LoadLibrary() */
+    if (!dll->handle) {
+        PYI_WINERROR_W(L"LoadLibrary", L"Failed to load Tk shared library '%ls'.\n", filename_w);
+        goto cleanup;
+    }
+
+    /* Extend PYI_EXT_FUNC_BIND() macro with error handling.
+     *
+     * Function names always contain ASCII characters, so we can safely
+     * format ANSI string (obtained via stringification) into wide-char
+     * message string. */
     #define _IMPORT_FUNCTION(name) \
-        *(FARPROC *)(&(dll->name)) = GetProcAddress(dll->handle, #name); \
+        PYI_EXT_FUNC_BIND(dll, name); \
         if (!dll->name) { \
-            PYI_WINERROR_W(L"GetProcAddress", L"Failed to import symbol %hs from Tk shared library\n", #name); \
+            PYI_WINERROR_W(L"GetProcAddress", L"Failed to import symbol %hs from Tk shared library.\n", #name); \
             goto cleanup; \
         }
 #else
+    /* Load */
+    dll->handle = pyi_utils_dlopen(filename); /* Wrapper for dlopen() */
+    if (dll->handle == NULL) {
+        PYI_ERROR("Failed to load Tk shared library '%s'. dlopen: %s\n", filename, dlerror());
+        goto cleanup;
+    }
+
+    /* Extend PYI_EXT_FUNC_BIND() with error handling. */
     #define _IMPORT_FUNCTION(name) \
-        *(void **)(&(dll->name)) = dlsym(dll->handle, #name); \
+        PYI_EXT_FUNC_BIND(dll, name); \
         if (!dll->name) { \
-            PYI_PERROR("dlsym", "Failed to import symbol %s from Tk shared library: dlsym: %s\n", #name, dlerror()); \
+            PYI_ERROR("dlsym", "Failed to import symbol %s from Tk shared library. dlsym: %s\n", #name, dlerror()); \
             goto cleanup; \
         }
 #endif
@@ -196,7 +213,6 @@ pyi_dylib_tk_load(const char *filename)
 #undef _IMPORT_FUNCTION
 
     PYI_DEBUG("LOADER: loaded functions from Tk shared library.\n");
-
     return dll;
 
 cleanup:

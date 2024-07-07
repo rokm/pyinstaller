@@ -236,64 +236,64 @@ struct PYTHON_DLL
     int version;
 
     /* Function pointers for imported functions */
-    PYI_EXT_FUNC_ENTRY(Py_DecRef);
-    PYI_EXT_FUNC_ENTRY(Py_DecodeLocale);
-    PYI_EXT_FUNC_ENTRY(Py_ExitStatusException);
-    PYI_EXT_FUNC_ENTRY(Py_Finalize);
-    PYI_EXT_FUNC_ENTRY(Py_InitializeFromConfig);
-    PYI_EXT_FUNC_ENTRY(Py_IsInitialized);
-    PYI_EXT_FUNC_ENTRY(Py_PreInitialize);
+    PYI_EXT_FUNC_ENTRY(Py_DecRef)
+    PYI_EXT_FUNC_ENTRY(Py_DecodeLocale)
+    PYI_EXT_FUNC_ENTRY(Py_ExitStatusException)
+    PYI_EXT_FUNC_ENTRY(Py_Finalize)
+    PYI_EXT_FUNC_ENTRY(Py_InitializeFromConfig)
+    PYI_EXT_FUNC_ENTRY(Py_IsInitialized)
+    PYI_EXT_FUNC_ENTRY(Py_PreInitialize)
 
-    PYI_EXT_FUNC_ENTRY(PyConfig_Clear);
-    PYI_EXT_FUNC_ENTRY(PyConfig_InitIsolatedConfig);
-    PYI_EXT_FUNC_ENTRY(PyConfig_Read);
-    PYI_EXT_FUNC_ENTRY(PyConfig_SetBytesString);
-    PYI_EXT_FUNC_ENTRY(PyConfig_SetString);
-    PYI_EXT_FUNC_ENTRY(PyConfig_SetWideStringList);
+    PYI_EXT_FUNC_ENTRY(PyConfig_Clear)
+    PYI_EXT_FUNC_ENTRY(PyConfig_InitIsolatedConfig)
+    PYI_EXT_FUNC_ENTRY(PyConfig_Read)
+    PYI_EXT_FUNC_ENTRY(PyConfig_SetBytesString)
+    PYI_EXT_FUNC_ENTRY(PyConfig_SetString)
+    PYI_EXT_FUNC_ENTRY(PyConfig_SetWideStringList)
 
-    PYI_EXT_FUNC_ENTRY(PyErr_Clear);
-    PYI_EXT_FUNC_ENTRY(PyErr_Fetch);
-    PYI_EXT_FUNC_ENTRY(PyErr_NormalizeException);
-    PYI_EXT_FUNC_ENTRY(PyErr_Occurred);
-    PYI_EXT_FUNC_ENTRY(PyErr_Print);
-    PYI_EXT_FUNC_ENTRY(PyErr_Restore);
+    PYI_EXT_FUNC_ENTRY(PyErr_Clear)
+    PYI_EXT_FUNC_ENTRY(PyErr_Fetch)
+    PYI_EXT_FUNC_ENTRY(PyErr_NormalizeException)
+    PYI_EXT_FUNC_ENTRY(PyErr_Occurred)
+    PYI_EXT_FUNC_ENTRY(PyErr_Print)
+    PYI_EXT_FUNC_ENTRY(PyErr_Restore)
 
-    PYI_EXT_FUNC_ENTRY(PyEval_EvalCode);
+    PYI_EXT_FUNC_ENTRY(PyEval_EvalCode)
 
-    PYI_EXT_FUNC_ENTRY(PyImport_AddModule);
-    PYI_EXT_FUNC_ENTRY(PyImport_ExecCodeModule);
-    PYI_EXT_FUNC_ENTRY(PyImport_ImportModule);
+    PYI_EXT_FUNC_ENTRY(PyImport_AddModule)
+    PYI_EXT_FUNC_ENTRY(PyImport_ExecCodeModule)
+    PYI_EXT_FUNC_ENTRY(PyImport_ImportModule)
 
-    PYI_EXT_FUNC_ENTRY(PyList_Append);
+    PYI_EXT_FUNC_ENTRY(PyList_Append)
 
-    PYI_EXT_FUNC_ENTRY(PyMarshal_ReadObjectFromString);
+    PYI_EXT_FUNC_ENTRY(PyMarshal_ReadObjectFromString)
 
-    PYI_EXT_FUNC_ENTRY(PyMem_RawFree);
+    PYI_EXT_FUNC_ENTRY(PyMem_RawFree)
 
-    PYI_EXT_FUNC_ENTRY(PyModule_GetDict);
+    PYI_EXT_FUNC_ENTRY(PyModule_GetDict)
 
-    PYI_EXT_FUNC_ENTRY(PyObject_CallFunction);
-    PYI_EXT_FUNC_ENTRY(PyObject_CallFunctionObjArgs);
-    PYI_EXT_FUNC_ENTRY(PyObject_GetAttrString);
-    PYI_EXT_FUNC_ENTRY(PyObject_SetAttrString);
-    PYI_EXT_FUNC_ENTRY(PyObject_Str);
+    PYI_EXT_FUNC_ENTRY(PyObject_CallFunction)
+    PYI_EXT_FUNC_ENTRY(PyObject_CallFunctionObjArgs)
+    PYI_EXT_FUNC_ENTRY(PyObject_GetAttrString)
+    PYI_EXT_FUNC_ENTRY(PyObject_SetAttrString)
+    PYI_EXT_FUNC_ENTRY(PyObject_Str)
 
-    PYI_EXT_FUNC_ENTRY(PyPreConfig_InitIsolatedConfig);
+    PYI_EXT_FUNC_ENTRY(PyPreConfig_InitIsolatedConfig)
 
-    PYI_EXT_FUNC_ENTRY(PyRun_SimpleStringFlags);
+    PYI_EXT_FUNC_ENTRY(PyRun_SimpleStringFlags)
 
-    PYI_EXT_FUNC_ENTRY(PyStatus_Exception);
+    PYI_EXT_FUNC_ENTRY(PyStatus_Exception)
 
-    PYI_EXT_FUNC_ENTRY(PySys_GetObject);
-    PYI_EXT_FUNC_ENTRY(PySys_SetObject);
+    PYI_EXT_FUNC_ENTRY(PySys_GetObject)
+    PYI_EXT_FUNC_ENTRY(PySys_SetObject)
 
-    PYI_EXT_FUNC_ENTRY(PyUnicode_AsUTF8);
-    PYI_EXT_FUNC_ENTRY(PyUnicode_Decode);
-    PYI_EXT_FUNC_ENTRY(PyUnicode_DecodeFSDefault);
-    PYI_EXT_FUNC_ENTRY(PyUnicode_FromFormat);
-    PYI_EXT_FUNC_ENTRY(PyUnicode_FromString);
-    PYI_EXT_FUNC_ENTRY(PyUnicode_Join);
-    PYI_EXT_FUNC_ENTRY(PyUnicode_Replace);
+    PYI_EXT_FUNC_ENTRY(PyUnicode_AsUTF8)
+    PYI_EXT_FUNC_ENTRY(PyUnicode_Decode)
+    PYI_EXT_FUNC_ENTRY(PyUnicode_DecodeFSDefault)
+    PYI_EXT_FUNC_ENTRY(PyUnicode_FromFormat)
+    PYI_EXT_FUNC_ENTRY(PyUnicode_FromString)
+    PYI_EXT_FUNC_ENTRY(PyUnicode_Join)
+    PYI_EXT_FUNC_ENTRY(PyUnicode_Replace)
 };
 
 struct PYTHON_DLL *pyi_dylib_python_load(const char *filename, int python_version);

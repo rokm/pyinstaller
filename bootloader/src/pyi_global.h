@@ -22,6 +22,8 @@
     #include <windows.h>
 #endif
 
+#include <stdlib.h>
+
 /* In the unlikely event that stdbool.h is not available, use our own
  * definitions of bool, true, and false. */
 #ifdef HAVE_STDBOOL_H

@@ -11,8 +11,6 @@
  * ****************************************************************************
  */
 
-#include <stdlib.h>
-
 #include "pyi_global.h"
 #include "pyi_python.h"
 #include "pyi_utils.h"
@@ -36,13 +34,14 @@ pyi_dylib_python_load(const char *filename, int python_version)
     /* Store version info */
     dll->version = python_version;
 
+    /* Load shared library */
 #ifdef _WIN32
-    /* UTF8 -> wide-char */
+    /* Convert filename from UTF-8 to wide-char */
     if (!pyi_win32_utf8_to_wcs(filename, wchar_t, PYI_PATH_MAX)) {
         goto cleanup;
     }
 
-    /* Load shared library */
+    /* Load */
     dll->handle = pyi_utils_dlopen(filename_w); /* Wrapper for LoadLibrary() */
     if (!dll->handle) {
         PYI_WINERROR_W(L"LoadLibrary", L"Failed to load Python shared library '%ls'.\n", filename_w);
@@ -140,7 +139,6 @@ pyi_dylib_python_load(const char *filename, int python_version)
 #undef _IMPORT_FUNCTION
 
     PYI_DEBUG("LOADER: loaded functions from Python shared library.\n");
-
     return dll;
 
 cleanup:
