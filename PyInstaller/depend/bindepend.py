@@ -886,9 +886,22 @@ if compat.is_linux:
 elif compat.is_win:
 
     def _classify_binary_vs_data(filename):
-        # See if the file can be opened using `pefile`.
         import pefile
 
+        # First check for MZ signature, in order to avoid using `pefile` on every data file; with pefile v2024.8.26,
+        # this became an order of magnitude costlier than in earlier versions, due to added forced garbage collection
+        # in the cleanup codepath (which is triggered when pefile.PE() fails with exception).
+        # See: https://github.com/erocarrera/pefile/commit/91fb851cb384fb45986cd1e80d2c63a7c22415b8
+        try:
+            with open(filename, 'rb') as fp:
+                sig = fp.read(2)
+        except Exception:
+            return None
+
+        if sig != b"MZ":
+            return "DATA"
+
+        # Check if the file can be opened using `pefile`.
         try:
             pe = pefile.PE(filename, fast_load=True)  # noqa: F841
             return 'BINARY'
