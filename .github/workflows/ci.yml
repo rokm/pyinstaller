@@ -68,7 +68,8 @@ jobs:
           architecture: ${{ matrix.architecture }}
 
       - name: Show python information
-        shell: python
+        if: startsWith(matrix.os, 'macos')
+        shell: env /usr/bin/arch -x86_64 python
         run: |
           import sys
           import platform
