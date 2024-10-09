@@ -7,6 +7,7 @@ on:
     branches:
       - 'develop'
       - 'v4'
+      - 'python-3.13-full'
   pull_request:
     branches:
       - '**'
