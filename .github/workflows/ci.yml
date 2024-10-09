@@ -67,6 +67,15 @@ jobs:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.architecture }}
 
+      - name: Show python information
+        shell: python
+        run: |
+          import sys
+          import platform
+          print(f"sys.platforn: {sys.platform}")
+          print(f"platform.platform(): {platform.platform()}")
+          print(f"platform.machine(): {platform.machine()}")
+
       - name: Install apt packages
         if: startsWith(matrix.os, 'ubuntu')
         run: |
