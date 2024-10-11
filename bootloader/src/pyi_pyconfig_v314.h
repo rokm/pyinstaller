@@ -1,6 +1,6 @@
 /*
  * ****************************************************************************
- * Copyright (c) 2023, PyInstaller Development Team.
+ * Copyright (c) 2024, PyInstaller Development Team.
  *
  * Distributed under the terms of the GNU General Public License (version 2
  * or later) with exception for distributing the bootloader.
@@ -11,8 +11,8 @@
  * ****************************************************************************
  */
 
-#ifndef PYI_PYCONFIG_V313_H
-#define PYI_PYCONFIG_V313_H
+#ifndef PYI_PYCONFIG_V314_H
+#define PYI_PYCONFIG_V314_H
 
 #include "pyi_global.h"
 #include <wchar.h>
@@ -48,11 +48,11 @@
  * accommodating 32-bit builds.
  */
 
-/* PyConfig structure for Python 3.13
- * https://github.com/python/cpython/blob/v3.13.0b1/Include/cpython/initconfig.h
+/* PyConfig structure for Python 3.14
+ * https://github.com/python/cpython/blob/v3.14.0a1/Include/cpython/initconfig.h
  */
 
-/* PyConfig_v313: variant without Py_GIL_DISABLED. */
+/* PyConfig_v314: variant without Py_GIL_DISABLED. */
 typedef struct {
     int _config_init;
 
@@ -141,10 +141,10 @@ typedef struct {
 #ifdef Py_DEBUG
     wchar_t *run_presite;
 #endif
-} PyConfig_v313;
+} PyConfig_v314;
 
 
-/* PyConfig_v313_GIL_DISABLED: variant with Py_GIL_DISABLED. */
+/* PyConfig_v314_GIL_DISABLED: variant with Py_GIL_DISABLED. */
 #define Py_GIL_DISABLED 1
 
 typedef struct {
@@ -235,7 +235,7 @@ typedef struct {
 #ifdef Py_DEBUG
     wchar_t *run_presite;
 #endif
-} PyConfig_v313_GIL_DISABLED;
+} PyConfig_v314_GIL_DISABLED;
 
 
 /* Keep these defines local to this header file... */
@@ -243,4 +243,4 @@ typedef struct {
 #undef Py_DEBUG
 #undef Py_GIL_DISABLED
 
-#endif /* PYI_PYCONFIG_V313_H */
+#endif /* PYI_PYCONFIG_V314_H */

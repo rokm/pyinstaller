@@ -313,6 +313,8 @@ pyi_pyconfig_create(const struct PYI_CONTEXT *pyi_ctx)
         _IMPL_CASE(312, 0, PyConfig_v312)
         _IMPL_CASE(313, 0, PyConfig_v313)
         _IMPL_CASE(313, 1, PyConfig_v313_GIL_DISABLED)
+        _IMPL_CASE(314, 0, PyConfig_v314)
+        _IMPL_CASE(314, 1, PyConfig_v314_GIL_DISABLED)
         default: {
             break;
         }
@@ -368,6 +370,8 @@ pyi_pyconfig_set_program_name(PyConfig *config, const struct PYI_CONTEXT *pyi_ct
         _IMPL_CASE(312, 0, PyConfig_v312)
         _IMPL_CASE(313, 0, PyConfig_v313)
         _IMPL_CASE(313, 1, PyConfig_v313_GIL_DISABLED)
+        _IMPL_CASE(314, 0, PyConfig_v314)
+        _IMPL_CASE(314, 1, PyConfig_v314_GIL_DISABLED)
         default: {
             break;
         }
@@ -402,6 +406,8 @@ pyi_pyconfig_set_python_home(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx
         _IMPL_CASE(312, 0, PyConfig_v312)
         _IMPL_CASE(313, 0, PyConfig_v313)
         _IMPL_CASE(313, 1, PyConfig_v313_GIL_DISABLED)
+        _IMPL_CASE(314, 0, PyConfig_v314)
+        _IMPL_CASE(314, 1, PyConfig_v314_GIL_DISABLED)
         default: {
             break;
         }
@@ -445,6 +451,8 @@ _pyi_pyconfig_set_module_search_paths(PyConfig *config, const struct PYI_CONTEXT
         _IMPL_CASE(312, 0, PyConfig_v312)
         _IMPL_CASE(313, 0, PyConfig_v313)
         _IMPL_CASE(313, 1, PyConfig_v313_GIL_DISABLED)
+        _IMPL_CASE(314, 0, PyConfig_v314)
+        _IMPL_CASE(314, 1, PyConfig_v314_GIL_DISABLED)
         default: {
             break;
         }
@@ -548,6 +556,8 @@ _pyi_pyconfig_set_argv(PyConfig *config, const struct PYI_CONTEXT *pyi_ctx, int 
         _IMPL_CASE(312, 0, PyConfig_v312)
         _IMPL_CASE(313, 0, PyConfig_v313)
         _IMPL_CASE(313, 1, PyConfig_v313_GIL_DISABLED)
+        _IMPL_CASE(314, 0, PyConfig_v314)
+        _IMPL_CASE(314, 1, PyConfig_v314_GIL_DISABLED)
         default: {
             break;
         }
@@ -705,6 +715,8 @@ pyi_pyconfig_set_runtime_options(PyConfig *config, const struct PYI_CONTEXT *pyi
         _IMPL_CASE(312, 0, PyConfig_v312)
         _IMPL_CASE(313, 0, PyConfig_v313)
         _IMPL_CASE(313, 1, PyConfig_v313_GIL_DISABLED)
+        _IMPL_CASE(314, 0, PyConfig_v314)
+        _IMPL_CASE(314, 1, PyConfig_v314_GIL_DISABLED)
         default: {
             break;
         }
