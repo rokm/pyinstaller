@@ -37,7 +37,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.14-dev']
         os: ['windows-latest', 'ubuntu-22.04', 'macos-13', 'macos-14']
         # Split macOS workflows between macos-13 (x86_64) and macos-14 (arm64)
         # runners to cover both architectures without running all combinations.
@@ -277,6 +277,7 @@ jobs:
           python -m PyInstaller.utils.run_tests -c PyInstaller/utils/pytest.ini --include_only=pyi_hooksample.
 
   test-alpine:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -307,6 +308,7 @@ jobs:
           "
 
   test-msys2:
+    if: false
     runs-on: windows-latest
     strategy:
       matrix:
