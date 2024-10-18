@@ -935,7 +935,7 @@ int pyi_main_onefile_parent_cleanup(struct PYI_CONTEXT *pyi_ctx)
      * removal and one-second delays. */
     if (cleanup_status < 0) {
         int count = 0;
-        const int max_retries = 5;
+        const int max_retries = 60;
         while (count++ < max_retries && cleanup_status != 0) {
             PYI_DEBUG_W(L"LOADER: failed to remove temporary directory - re-trying in one second (attempt %d / %d)...\n", count, max_retries);
             cleanup_status = pyi_recursive_rmdir(pyi_ctx->application_home_dir);
