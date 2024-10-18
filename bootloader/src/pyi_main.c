@@ -924,6 +924,23 @@ int pyi_main_onefile_parent_cleanup(struct PYI_CONTEXT *pyi_ctx)
         PYI_DEBUG_W(L"LOADER: trying to remove temporary directory again...\n");
         cleanup_status = pyi_recursive_rmdir(pyi_ctx->application_home_dir);
     }
+
+    /* If force-removal of DLLs from this process did not work (or there
+     * were no DLLs from temporary directory left loaded in this process),
+     * the locking might be caused by a grandchild process that is still
+     * in process of being shut-down at this point. An example of this
+     * is QtWebEngineProcess.exe helper that is spawned by QtWebEngine-based
+     * application. Give such grandchild processes a total of five seconds
+     * to shut down on their own, with five re-tries at temporary directory
+     * removal and one-second delays. */
+    if (cleanup_status < 0) {
+        int count = 0;
+        const int max_retries = 5;
+        while (count++ < max_retries && cleanup_status != 0) {
+            PYI_DEBUG_W(L"LOADER: failed to remove temporary directory - re-trying in one second (attempt %d / %d)...\n", count, max_retries);
+            cleanup_status = pyi_recursive_rmdir(pyi_ctx->application_home_dir);
+        }
+    }
 #endif
 
     if (cleanup_status < 0) {
