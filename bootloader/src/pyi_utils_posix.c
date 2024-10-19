@@ -495,6 +495,10 @@ _signal_handler(int signum)
      * functions involved are generally not signal safe. Furthermore, it
      * may result in endless spamming of SIGPIPE, as reported and
      * diagnosed in #5270. */
+    if (!global_pyi_ctx->child_pid) {
+        /* No-op if child process does not exist (yet or anymore) */
+        return;
+    }
     kill(global_pyi_ctx->child_pid, signum);
 }
 
@@ -511,8 +515,44 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
      * and 32-64 (Linux real-time). */
     const size_t num_signals = 65;
 
-    sighandler_t handler;
+    sighandler_t signal_handler;
     int signum;
+
+    /* Install signal handlers to either forward received signals to the
+     * child process, or ignore them (effectively blocking them).
+     *
+     * NOTE: we install signal handlers *before* forking the child process
+     * in order to prevent sporadic failures of our signal handling test
+     * (`test_onefile_signal_handling`); there, we signal the parent
+     * process from the child, and depending on the scenario (forward/block)
+     * expect child to either receive the forwarded signal or not receive
+     * the signal. If the signal handlers are installed after the `fork()`
+     * and `execvp()`, it might happen (in CPU contention scenarios) that
+     * the child proceeds with execution while the parent stalls for a bit,
+     * and thus child ends up signalling the parent before the latter has
+     * set up its signal handlers.
+     *
+     * In practice, this early setup should not make any difference; while
+     * the signal handlers are inherited when the child process is forked,
+     * the subsequent program re-execution via execvp() ends up resetting
+     * them. */
+    if (pyi_ctx->ignore_signals) {
+        PYI_DEBUG("LOADER: registering signal handlers to ignore received signals.\n");
+        signal_handler = &_ignoring_signal_handler;
+    } else {
+        PYI_DEBUG("LOADER: registering signal handlers to forward received signals to child.\n");
+        signal_handler = &_signal_handler;
+    }
+
+    for (signum = 0; signum < num_signals; ++signum) {
+        /* Don't mess with SIGCHLD/SIGCLD; it affects our ability
+         * to wait() for the child to exit. Similarly, do not change
+         * don't change SIGTSP handling to allow Ctrl-Z */
+        if (signum == SIGCHLD || signum == SIGCLD || signum == SIGTSTP) {
+            continue;
+        }
+        signal(signum, signal_handler);
+    }
 
     /* macOS: Apple Events handling */
 #if defined(__APPLE__) && defined(WINDOWED)
@@ -536,6 +576,7 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
     }
 #endif
 
+    /* Fork the child process. */
     pid = fork();
     if (pid < 0) {
         PYI_WARNING("LOADER: failed to fork child process: %s\n", strerror(errno));
@@ -589,24 +630,8 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
      * The exception is the `cleanup` block that frees argv_pyi; in the child,
      * wait_rc is -1, so the child exit code checking is skipped. */
 
+    /* Store the child PID. */
     pyi_ctx->child_pid = pid;
-    handler = pyi_ctx->ignore_signals ? &_ignoring_signal_handler : &_signal_handler;
-
-    /* Redirect all signals received by parent to child process. */
-    if (pyi_ctx->ignore_signals) {
-        PYI_DEBUG("LOADER: ignoring all signals in parent\n");
-    } else {
-        PYI_DEBUG("LOADER: registering signal handlers\n");
-    }
-
-    for (signum = 0; signum < num_signals; ++signum) {
-        /* Don't mess with SIGCHLD/SIGCLD; it affects our ability
-         * to wait() for the child to exit. Similarly, do not change
-         * don't change SIGTSP handling to allow Ctrl-Z */
-        if (signum != SIGCHLD && signum != SIGCLD && signum != SIGTSTP) {
-            signal(signum, handler);
-        }
-    }
 
 #if defined(__APPLE__) && defined(WINDOWED)
     /* macOS: forward events to child */
@@ -642,11 +667,15 @@ pyi_utils_create_child(struct PYI_CONTEXT *pyi_ctx)
     wait_rc = waitpid(pyi_ctx->child_pid, &rc, 0);
 #endif
 
+    /* Reset stored child PID - this aims to immediately turn forwarding
+     * signal handler into no-op (due to `pyi_ctx->child_pid != 0` check). */
+     pyi_ctx->child_pid = 0;
+
     if (wait_rc < 0) {
         PYI_WARNING("LOADER: failed to wait for child process: %s\n", strerror(errno));
     }
 
-    /* When child process exited, reset signal handlers to default values. */
+    /* After child process exited, reset signal handlers to default values. */
     PYI_DEBUG("LOADER: restoring signal handlers\n");
     for (signum = 0; signum < num_signals; ++signum) {
         signal(signum, SIG_DFL);
