@@ -46,8 +46,14 @@ def main(start_method):
     while not queue.empty():
         results.append(queue.get())
 
+    # NOTE: as per [1]: "If multiple processes are enqueuing objects, it is possible for the objects to be received at
+    # the other end out-of-order. However, objects enqueued by the same process will always be in the expected order
+    # with respect to each other."
+    # [1] https://docs.python.org/3/library/multiprocessing.html#pipes-and-queues
+    #
+    # Therefore, accept either order of results as a valid one.
     print(f"Results: {results}")
-    assert results == [1, 2]
+    assert results == [1, 2] or results == [2, 1]
 
 
 if __name__ == '__main__':
