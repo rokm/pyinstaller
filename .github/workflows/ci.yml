@@ -236,7 +236,7 @@ jobs:
         id: run-tests
         run: >
             pytest
-            -n 5 --maxfail 3 --durations 10 tests/unit tests/functional
+            --maxfail 3 --durations 10 tests/unit tests/functional
 
       # On all platforms, create a tarball to ensure that symlinks are preserved. Avoid using compression here,
       # as the tarball will end up collected into artifact zip archive.
@@ -520,7 +520,7 @@ jobs:
         # and frozen programs).
         run: >
             python -m pytest
-            -n 3 --maxfail 3 --durations 10 tests/unit tests/functional
+            --maxfail 3 --durations 10 tests/unit tests/functional
 
   test-termux:
     if: false
