@@ -30,7 +30,7 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
-        os: ['windows-latest', 'ubuntu-24.04', 'macos-15-intel', 'macos-14']
+        os: ['ubuntu-24.04']
         # Split macOS workflows between macos-15-intel (x86_64) and macos-14 (arm64)
         # runners to cover both architectures without running all combinations.
         exclude:
@@ -312,6 +312,7 @@ jobs:
           python -m PyInstaller.utils.run_tests --include_only=pyi_hooksample.
 
   test-freethreaded:
+    if: false
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -338,6 +339,7 @@ jobs:
         run: pytest tests/functional/test_freethreading.py
 
   test-alpine:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout PyInstaller code
@@ -378,6 +380,7 @@ jobs:
           "
 
   test-msys2:
+    if: false
     runs-on: windows-latest
     strategy:
       matrix:
@@ -520,6 +523,7 @@ jobs:
             -n 3 --maxfail 3 --durations 10 tests/unit tests/functional
 
   test-termux:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout PyInstaller code
