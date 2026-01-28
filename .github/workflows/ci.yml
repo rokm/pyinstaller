@@ -221,12 +221,6 @@ jobs:
             print(f"Removing {path}...")
             shutil.rmtree(path)
 
-      - name: Start display server
-        if: startsWith(matrix.os, 'ubuntu')
-        run: |
-          Xvfb :99 &
-          echo "DISPLAY=:99" >> $GITHUB_ENV
-
       # Required on macOS >= 11 by tests that register custom URL schema. This could also be achieved by passing
       # --basetemp to pytest, but using environment variable allows us to have a unified "Run test" step for
       # all OSes.
@@ -515,11 +509,6 @@ jobs:
 
           # Make sure the help options print.
           python -m PyInstaller -h
-
-      - name: Start display server
-        run: |
-          Xvfb :99 &
-          echo "DISPLAY=:99" >> $GITHUB_ENV
 
       - name: Run tests
         # Keep the number of pytest workers below the number of available

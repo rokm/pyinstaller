@@ -27,3 +27,6 @@ pytest-rerunfailures!=16.0
 # Better subprocess alternative with process tree support.
 # Not available on cygwin.
 psutil; sys_platform != "cygwin"
+
+# On Linux, run tests that require X server under Xvfb
+pytest-xvfb; sys_platform == "linux" or sys_platform == "cygwin"
