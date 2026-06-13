@@ -7,16 +7,16 @@ wheel() {
   PYI_WHEEL_TAG="$wheel_tag" PYI_PLATFORM="$platform" python -m hatchling build -t wheel
 }
 
-wheel Windows-64bit-intel win_amd64
-wheel Windows-32bit-intel win32
-wheel Windows-64bit-arm win_arm64
+#wheel Windows-64bit-intel win_amd64
+#wheel Windows-32bit-intel win32
+#wheel Windows-64bit-arm win_arm64
 wheel Darwin-64bit macosx_10_13_universal2
-wheel Linux-64bit-intel manylinux2014_x86_64
-wheel Linux-32bit-intel manylinux2014_i686
-wheel Linux-64bit-arm manylinux2014_aarch64
-wheel Linux-64bit-ppc manylinux2014_ppc64le
-wheel Linux-64bit-s390x manylinux2014_s390x
-wheel Linux-64bit-intel-musl musllinux_1_1_x86_64
-wheel Linux-64bit-arm-musl musllinux_1_1_aarch64
+#wheel Linux-64bit-intel manylinux2014_x86_64
+#wheel Linux-32bit-intel manylinux2014_i686
+#wheel Linux-64bit-arm manylinux2014_aarch64
+#wheel Linux-64bit-ppc manylinux2014_ppc64le
+#wheel Linux-64bit-s390x manylinux2014_s390x
+#wheel Linux-64bit-intel-musl musllinux_1_1_x86_64
+#wheel Linux-64bit-arm-musl musllinux_1_1_aarch64
 
 python -m hatchling build -t sdist
