@@ -361,6 +361,7 @@ class AppBuilder:
         # expected exit on their own.
         stdout = stderr = None
         cleanup_required = True
+        take_screenshot = False
         pytest_exception = None
         custom_exception = None
         try:
@@ -376,10 +377,36 @@ class AppBuilder:
             # This might be thrown by pytest-timeout when using "signal" timeout mode.
             self._display_message('RUN-EXE', f'Caught pytest.fail.Exception: {e}')
             pytest_exception = e  # Store exception, so we can re-raise it after cleanup.
+            take_screenshot = True
         except (subprocess.TimeoutExpired) if psutil is None else (psutil.TimeoutExpired, subprocess.TimeoutExpired):
             # Timeout while running the executable; clean up the process tree, then raise exception to fail the test.
             self._display_message('RUN-EXE', f'Timeout while running executable (timeout: {timeout} seconds)!')
             custom_exception = RuntimeError(f"Timeout while running executable (timeout: {timeout} seconds)!")
+            take_screenshot = True
+
+        # If running under Windows or macOS CI, try taking a screenshot of desktop in the event of (unexpected) timeout.
+        # This way, if the application execution happens to be blocked by an OS-level dialog that would require user
+        # action, we get a visual evidence of it as part of the test results.
+        if take_screenshot and (is_win or is_darwin) and os.environ.get('CI', None):
+            try:
+                import pyscreenshot
+            except ImportError:
+                pyscreenshot = None
+
+            if pyscreenshot:
+                try:
+                    self._display_message('RUN-EXE', 'Trying to take a screenshot...')
+                    img = pyscreenshot.grab()
+                    img_filename = self._tmp_path / 'screenshot.png'
+                    self._display_message('RUN-EXE', f'Saving screenshot to {str(img_filename)!r}...')
+                    # Calling `img.save(img_filename)` seems to result in `Exception ignored while finalizing file...`
+                    # when resource leak check is enabled, so open the file ourselves.
+                    with open(img_filename, 'wb') as fp:
+                        img.save(fp, 'PNG')
+                except Exception as e:
+                    self._display_message('RUN-EXE', f'Failed to take/save screenshot: {e}', e)
+            else:
+                self._display_message('RUN-EXE', 'pyscreenshot not installed - not taking a screenshot!')
 
         if cleanup_required:
             if psutil is None:
