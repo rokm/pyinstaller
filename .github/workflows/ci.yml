@@ -156,7 +156,7 @@ jobs:
       - name: Install test dependencies (tools and libraries)
         if: ${{ !endsWith(matrix.python-version, '-dev') && matrix.python-version != '3.13t' }}
         run: |
-          python -m pip install --progress-bar=off --upgrade pyqt6 pillow pyscreenshot
+          python -m pip install --progress-bar=off --upgrade pyqt6 pyqt5 pyside6 pillow pyscreenshot
 
       # Some python versions come with initial `setuptools` installation that seems to contain `.opt-1.pyc`
       # files in `__pycache__` directories. During the upgrade, `pip` fails to remove those directories
@@ -239,7 +239,7 @@ jobs:
         id: run-tests
         run: >
             pytest
-            --capture=tee-sys --maxfail 3 --durations 10 tests/unit tests/functional -k "test_Qt_QtWidgets and onedir and PyQt6"
+            --capture=tee-sys --durations 10 tests/unit tests/functional -k "test_Qt_QtWidgets and onedir"
 
       # On all platforms, create a tarball to ensure that symlinks are preserved. Avoid using compression here,
       # as the tarball will end up collected into artifact zip archive.
