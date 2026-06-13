@@ -235,6 +235,16 @@ jobs:
         run: |
           echo "PYTEST_DEBUG_TEMPROOT=$RUNNER_TEMP" >> $GITHUB_ENV
 
+      # On macos-26-intel runners (image 20260608.0215.1, macOS 26.4), Qt-based applications seem to freeze (or
+      # at least stop processing timer-based events) after showing their window. This seems to affect all Qt
+      # bindings (PyQt5, PyQt6, PySide6). If the built application is transferred and ran through Rosetta2 on an
+      # arm64 macOS 26, it works normally. As a work-around, try using offscreen rendering, which seems to mitigate
+      # this particular issue.
+      - name: Use offscreen rendering for Qt applications
+        if: ${{ matrix.os == 'macos-26-intel' }}
+        run: |
+          echo "QT_QPA_PLATFORM=offscreen" >> $GITHUB_ENV
+
       - name: Run tests
         id: run-tests
         run: >
