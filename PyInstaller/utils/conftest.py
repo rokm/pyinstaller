@@ -409,8 +409,11 @@ class AppBuilder:
                     self._display_message('RUN-EXE', 'Trying to take a screenshot...')
                     img = pyscreenshot.grab()
                     img_filename = self._tmp_path / 'screenshot.png'
-                    self._display_message('RUN-EXE', f'Trying to save screenshot to {str(img_filename)!r}...')
-                    img.save(img_filename)
+                    self._display_message('RUN-EXE', f'Saving screenshot to {str(img_filename)!r}...')
+                    # Calling `img.save(img_filename)` seems to result in `Exception ignored while finalizing file...`
+                    # when resource leak check is enabled, so open the file ourselves.
+                    with open(img_filename, 'wb') as fp:
+                        img.save(fp, 'PNG')
                 except Exception as e:
                     self._display_message('RUN-EXE', f'Failed to take/save screenshot: {e}', e)
             else:
