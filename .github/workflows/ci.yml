@@ -239,7 +239,7 @@ jobs:
         id: run-tests
         run: >
             pytest
-            -n 5 --maxfail 3 --durations 10 tests/unit tests/functional -k "test_Qt_QtWidgets and onedir and PyQt6"
+            --capture=tee-sys --maxfail 3 --durations 10 tests/unit tests/functional -k "test_Qt_QtWidgets and onedir and PyQt6"
 
       # On all platforms, create a tarball to ensure that symlinks are preserved. Avoid using compression here,
       # as the tarball will end up collected into artifact zip archive.
