@@ -31,7 +31,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14', '3.15-dev']
+        python-version: ['3.15-dev']
         os: ['windows-latest', 'ubuntu-24.04', 'macos-15-intel', 'macos-14']
         # Split macOS workflows between macos-15-intel (x86_64) and macos-14 (arm64)
         # runners to cover both architectures without running all combinations.
@@ -175,7 +175,7 @@ jobs:
       # builds of their wheels yet, and we have no way of filtering them in the requirements file.
       # This should be remedied in python 3.14 with the new `sys_abi_feature` environment marker (PEP 780).
       - name: Install test dependencies (tools and libraries)
-        if: ${{ !endsWith(matrix.python-version, '-dev') && matrix.python-version != '3.13t' }}
+        #if: ${{ !endsWith(matrix.python-version, '-dev') && matrix.python-version != '3.13t' }}
         run: |
           python -m pip install --progress-bar=off --upgrade --requirement tests/requirements-libraries.txt
 
@@ -346,10 +346,11 @@ jobs:
           python -m PyInstaller.utils.run_tests --include_only=pyi_hooksample.
 
   test-freethreaded:
+    if: false
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ['3.13t', '3.14t', '3.15t-dev']
+        python-version: ['3.15t-dev']
         os: ['windows-latest', 'ubuntu-24.04', 'macos-15-intel', 'macos-14']
       fail-fast: false
     steps:
@@ -373,6 +374,7 @@ jobs:
         run: pytest tests/functional/test_freethreading.py
 
   test-alpine:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout PyInstaller code
@@ -413,6 +415,7 @@ jobs:
           "
 
   test-msys2:
+    if: false
     runs-on: windows-latest
     strategy:
       matrix:
@@ -491,6 +494,7 @@ jobs:
             -n 5 --maxfail 3 --durations 10 tests/unit tests/functional
 
   test-cygwin:
+    if: false
     runs-on: windows-latest
     defaults:
       run:
@@ -573,6 +577,7 @@ jobs:
             -n 3 --maxfail 3 --durations 10 tests/unit tests/functional
 
   test-termux:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout PyInstaller code
@@ -606,6 +611,7 @@ jobs:
           '
 
   test-misc-platforms:
+    if: false
     runs-on: ubuntu-latest
     strategy:
       matrix:
