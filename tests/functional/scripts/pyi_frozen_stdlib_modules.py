@@ -36,14 +36,15 @@ for module_name in frozen_stdlib_modules:
     print(f"Checking {module_name}...", file=sys.stderr)
     module = importlib.import_module(module_name)
 
-    if not hasattr(module, '__file__'):
+    # Python 3.16.0a1 introduced _pybuiltins module that does not have a __file__ attribute set...
+    if not hasattr(module, '__file__') and module_name != '_pybuiltins':
         raise RuntimeError(f"No __file__ attribute on {module_name}!")
 
     # Collect: module_name, __file__, filename and origname from __spec__.loaded_state
     loader_state = module.__spec__.loader_state
     entry = (
         module_name,
-        module.__file__,
+        getattr(module, '__file__', None),  # Might be unavailable...
         loader_state.filename,
         loader_state.origname,
     )
