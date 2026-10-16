@@ -712,6 +712,10 @@ def _fixup_frozen_stdlib():
         if not _imp.is_frozen(module_name):
             continue
 
+        # Python 3.16.0a1 introduced _pybuiltins that does not seem to have __file__ attribute set...
+        if module_name == '_pybuiltins':
+            continue
+
         is_pkg = _imp.is_frozen_package(module_name)
 
         # Determine "real" name from __spec__.loader_state.
