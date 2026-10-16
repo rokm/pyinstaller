@@ -56,6 +56,10 @@ b"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 </assembly>
 """  # noqa: E122,E501
 
+#- namespace strings used by nodes that we might need to add
+_URN_ASM_V1 = "urn:schemas-microsoft-com:asm.v1"
+_URN_ASM_V3 = "urn:schemas-microsoft-com:asm.v3"
+
 #- DOM navigation helpers
 
 
@@ -91,26 +95,26 @@ def _set_execution_level(manifest_dom, root_element, uac_admin=False, uac_uiacce
     # <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
     trust_info_element = _find_element_by_tag(root_element, "trustInfo")
     if not trust_info_element:
-        trust_info_element = manifest_dom.createElement("trustInfo")
-        trust_info_element.setAttribute("xmlns", "urn:schemas-microsoft-com:asm.v3")
+        trust_info_element = manifest_dom.createElementNS(_URN_ASM_V3, "trustInfo")
+        trust_info_element.setAttribute("xmlns", _URN_ASM_V3)  # Work-around for attribute not written in python < 3.16
         root_element.appendChild(trust_info_element)
 
     # <security>
     security_element = _find_element_by_tag(trust_info_element, "security")
     if not security_element:
-        security_element = manifest_dom.createElement("security")
+        security_element = manifest_dom.createElementNS(_URN_ASM_V3, "security")
         trust_info_element.appendChild(security_element)
 
     # <requestedPrivileges>
     requested_privileges_element = _find_element_by_tag(security_element, "requestedPrivileges")
     if not requested_privileges_element:
-        requested_privileges_element = manifest_dom.createElement("requestedPrivileges")
+        requested_privileges_element = manifest_dom.createElementNS(_URN_ASM_V3, "requestedPrivileges")
         security_element.appendChild(requested_privileges_element)
 
     # <requestedExecutionLevel>
     requested_execution_level_element = _find_element_by_tag(requested_privileges_element, "requestedExecutionLevel")
     if not requested_execution_level_element:
-        requested_execution_level_element = manifest_dom.createElement("requestedExecutionLevel")
+        requested_execution_level_element = manifest_dom.createElementNS(_URN_ASM_V3, "requestedExecutionLevel")
         requested_privileges_element.appendChild(requested_execution_level_element)
 
     requested_execution_level_element.setAttribute("level", "requireAdministrator" if uac_admin else "asInvoker")
@@ -137,13 +141,13 @@ def _ensure_common_controls_dependency(manifest_dom, root_element):
             break
     else:
         # Create <dependency>
-        dependency_element = manifest_dom.createElement("dependency")
+        dependency_element = manifest_dom.createElementNS(_URN_ASM_V1, "dependency")
         root_element.appendChild(dependency_element)
         # Create <dependentAssembly>
-        dependent_assembly_element = manifest_dom.createElement("dependentAssembly")
+        dependent_assembly_element = manifest_dom.createElementNS(_URN_ASM_V1, "dependentAssembly")
         dependency_element.appendChild(dependent_assembly_element)
         # Create <assemblyIdentity>
-        common_controls_element = manifest_dom.createElement("assemblyIdentity")
+        common_controls_element = manifest_dom.createElementNS(_URN_ASM_V1, "assemblyIdentity")
         dependent_assembly_element.appendChild(common_controls_element)
 
     common_controls_element.setAttribute("type", "win32")
