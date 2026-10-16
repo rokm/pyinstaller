@@ -2647,8 +2647,17 @@ class ModuleGraph(ObjectGraph):
                 # in "from foo import bar", which is either a non-ignorable
                 # submodule of "foo" or an ignorable global attribute of
                 # "foo.__init__").
-                name = inst.argval
-                module.add_global_attr(name)
+
+                # In python 3.16.0a1, DELETE_NAME has been replaced with
+                # a combination of PUSH_NULL and STORE_NAME. See:
+                # - https://github.com/python/cpython/issues/145854
+                # - https://github.com/python/cpython/pull/146006
+                if inst.opname == 'STORE_NAME' and prev_insts and prev_insts[-1].opname == 'PUSH_NULL':
+                    name = inst.argval
+                    module.remove_global_attr_if_found(name)
+                else:
+                    name = inst.argval
+                    module.add_global_attr(name)
 
             elif inst.opname in ('DELETE_NAME', 'DELETE_GLOBAL'):
                 # If this is the undeclaration of a previously declared global
