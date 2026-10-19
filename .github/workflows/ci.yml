@@ -491,6 +491,8 @@ jobs:
             -n 5 --maxfail 3 --durations 10 tests/unit tests/functional
 
   test-msys2-clangarm64:
+    env:
+      CC: clang
     runs-on: windows-11-arm
     strategy:
       matrix:
@@ -551,7 +553,7 @@ jobs:
         run: |
           # Compile bootloader
           cd bootloader
-          python waf --clang --tests all
+          python waf --tests all
           cd ..
 
           # Install PyInstaller.
