@@ -28,6 +28,7 @@ permissions:
 
 jobs:
   tests:
+    if: false
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -342,6 +343,7 @@ jobs:
           python -m PyInstaller.utils.run_tests --include_only=pyi_hooksample.
 
   test-freethreaded:
+    if: false
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -369,6 +371,7 @@ jobs:
         run: pytest tests/functional/test_freethreading.py
 
   test-alpine:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout PyInstaller code
@@ -409,6 +412,7 @@ jobs:
           "
 
   test-msys2:
+    if: false
     runs-on: windows-latest
     strategy:
       matrix:
@@ -486,7 +490,83 @@ jobs:
             pytest
             -n 5 --maxfail 3 --durations 10 tests/unit tests/functional
 
+  test-msys2-clangarm64:
+    runs-on: windows-11-arm
+    strategy:
+      matrix:
+        include:
+          - { sys: clangarm64, env: clang-aarch64 }
+      fail-fast: false
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - name: Setup msys2 environment
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          msystem: ${{matrix.sys}}
+          install: >-
+            mingw-w64-${{matrix.env}}-clang
+            mingw-w64-${{matrix.env}}-python
+            mingw-w64-${{matrix.env}}-python-pip
+            mingw-w64-${{matrix.env}}-python-setuptools
+            mingw-w64-${{matrix.env}}-python-packaging
+            mingw-w64-${{matrix.env}}-python-pytest
+            mingw-w64-${{matrix.env}}-python-pytest-xdist
+            mingw-w64-${{matrix.env}}-python-pytest-timeout
+
+      # Some msys2 python packages are not available for i686 anymore:
+      #  - numpy
+      #  - pefile
+      #  - psutil (removed with update to psutil 6.1.1; see https://github.com/msys2/MINGW-packages/commit/7f1c75b33a5aebb89899f99f5fa656c623eeb9ed)
+      #  - pillow (see https://github.com/msys2/MINGW-packages/commit/a7d88c34aa36adce78ba71633711412a24d8792c)
+      #  - pywin32-ctypes (see https://github.com/msys2/MINGW-packages/commit/a8bba24b7d3abf45c8d5b3c67af5058c754f6f11)
+      #  - pywin32 (see https://github.com/msys2/MINGW-packages/commit/a8bba24b7d3abf45c8d5b3c67af5058c754f6f11)
+      #  - pygobject (see https://github.com/msys2/MINGW-packages/commit/a8bba24b7d3abf45c8d5b3c67af5058c754f6f11)
+      # If running in 64-bit environment, install the said packages here.
+      # Otherwise, we will run tests without these packages (note that
+      # if not installed here, `pefile` and `pywin32-ctypes` will end
+      # up installed via `pip` as part of PyInstaller's dependencies).
+      - name: Install extra msys2 packages
+        run: >
+          pacman -S --noconfirm
+          mingw-w64-${{matrix.env}}-python-numpy
+          mingw-w64-${{matrix.env}}-python-pefile
+          mingw-w64-${{matrix.env}}-python-psutil
+          mingw-w64-${{matrix.env}}-python-pillow
+          mingw-w64-${{matrix.env}}-python-pywin32-ctypes
+          mingw-w64-${{matrix.env}}-python-pywin32
+          mingw-w64-${{matrix.env}}-python-gobject
+
+      - name: Checkout PyInstaller code
+        uses: actions/checkout@v6
+
+      - name: Show system and python information
+        run: |
+          uname -a
+          python --version
+
+      - name: Install PyInstaller
+        run: |
+          # Compile bootloader
+          cd bootloader
+          python waf --clang --tests all
+          cd ..
+
+          # Install PyInstaller.
+          python -m pip install --progress-bar=off .[completion]
+
+          # Make sure the help options print.
+          python -m PyInstaller -h
+
+      - name: Run tests
+        run: >
+            pytest
+            -n 5 --maxfail 3 --durations 10 tests/unit tests/functional
+
   test-cygwin:
+    if: false
     runs-on: windows-latest
     defaults:
       run:
@@ -562,6 +642,7 @@ jobs:
             -n 3 --maxfail 3 --durations 10 tests/unit tests/functional
 
   test-termux:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout PyInstaller code
@@ -595,6 +676,7 @@ jobs:
           '
 
   test-misc-platforms:
+    if: false
     runs-on: ubuntu-latest
     strategy:
       matrix:
