@@ -492,7 +492,7 @@ jobs:
 
   test-msys2-clangarm64:
     env:
-      CC: clang
+      PYINSTALLER_BOOTLOADER_WAF_ARGS: --clang
     runs-on: windows-11-arm
     strategy:
       matrix:
@@ -553,11 +553,11 @@ jobs:
         run: |
           # Compile bootloader
           cd bootloader
-          python waf --tests all
+          python waf --tests --clang all
           cd ..
 
           # Install PyInstaller.
-          python -m pip install --progress-bar=off .[completion]
+          python -m pip install --progress-bar=off -e .[completion]
 
           # Make sure the help options print.
           python -m PyInstaller -h
