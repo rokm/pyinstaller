@@ -169,6 +169,7 @@ jobs:
       - name: Install test dependencies (base tools)
         run: |
           python -m pip install --progress-bar=off --upgrade --requirement tests/requirements-base.txt
+          python -m pip install --progress-bar=off --upgrade pyscreenshot
 
       - name: Install test dependencies (tools and libraries)
         if: ${{ !endsWith(matrix.python-version, '-dev') }}
