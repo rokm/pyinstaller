@@ -970,7 +970,8 @@ class Analysis(Target):
         if base_modules_toc:
             logger.info('Creating %s...', os.path.basename(base_library_zip))
             create_base_library_zip(base_library_zip, base_modules_toc, code_cache)
-            self.datas.append((os.path.basename(base_library_zip), base_library_zip, 'DATA'))  # Bundle as data file.
+            # Bundle as ZIPFILE to avoid unnecessary compression in PKG archive in onefile mode.
+            self.datas.append((os.path.basename(base_library_zip), base_library_zip, 'ZIPFILE'))
 
         # Normalize list of pure-python modules (these will end up in PYZ archive, so use specific normalization).
         self.pure = normalize_pyz_toc(self.pure)

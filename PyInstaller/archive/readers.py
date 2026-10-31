@@ -25,8 +25,8 @@ class NotAnArchiveError(TypeError):
 # Type codes for CArchive TOC entries
 PKG_ITEM_BINARY = 'b'  # binary
 PKG_ITEM_DEPENDENCY = 'd'  # multi-package dependency
-PKG_ITEM_PYZ = 'z'  # zlib (pyz) - frozen Python code
-PKG_ITEM_ZIPFILE = 'Z'  # zlib (pyz) - frozen Python code
+PKG_ITEM_PYZ = 'z'  # PYZ archive
+PKG_ITEM_ZIPFILE = 'Z'  # ZIP archive - for example, base_library.zip
 PKG_ITEM_PYMODULE = 'm'  # Python module
 PKG_ITEM_PYSOURCE = 's'  # Python script
 PKG_ITEM_DATA = 'x'  # data
