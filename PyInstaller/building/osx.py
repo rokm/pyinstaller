@@ -520,7 +520,7 @@ class BUNDLE(Target):
                     # 'Contents/Frameworks'.
                     file_base_dir = 'Contents/Frameworks'
                     crosslink_base_dir = None
-            elif typecode == 'DATA':
+            elif typecode in {'DATA', 'ZIPFILE'}:
                 # Data file; relocate to `Contents/Resources` and cross-link it back into `Contents/Frameworks`.
                 file_base_dir = 'Contents/Resources'
                 crosslink_base_dir = 'Contents/Frameworks'

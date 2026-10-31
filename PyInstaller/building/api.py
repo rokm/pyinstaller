@@ -219,6 +219,8 @@ class PKG(Target):
                 'SPLASH': COMPRESSED,
                 # Do not compress PYZ as a whole, as it contains individually-compressed modules.
                 'PYZ': UNCOMPRESSED,
+                # ZIP files are already compressed.
+                'ZIPFILE': UNCOMPRESSED,
                 # Do not compress target names in symbolic links.
                 'SYMLINK': UNCOMPRESSED,
             }

@@ -25,8 +25,8 @@
 /* Types of CArchive items. */
 #define ARCHIVE_ITEM_BINARY           'b'  /* binary */
 #define ARCHIVE_ITEM_DEPENDENCY       'd'  /* multi-package dependency */
-#define ARCHIVE_ITEM_PYZ              'z'  /* zlib (pyz) - frozen Python code */
-#define ARCHIVE_ITEM_ZIPFILE          'Z'  /* zlib (pyz) - frozen Python code */
+#define ARCHIVE_ITEM_PYZ              'z'  /* PYZ archive */
+#define ARCHIVE_ITEM_ZIPFILE          'Z'  /* ZIP file - for example, base_library.zip */
 #define ARCHIVE_ITEM_PYMODULE         'm'  /* Python module */
 #define ARCHIVE_ITEM_PYSOURCE         's'  /* Python script */
 #define ARCHIVE_ITEM_DATA             'x'  /* data */
