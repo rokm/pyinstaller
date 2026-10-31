@@ -16,7 +16,7 @@ import marshal
 import zipfile
 
 from PyInstaller.loader.pyimod01_archive import PYZ_ITEM_MODULE, PYZ_ITEM_PKG
-from PyInstaller.archive.readers import CArchiveReader, PKG_ITEM_PYPACKAGE, PKG_ITEM_PYMODULE, PKG_ITEM_PYSOURCE
+from PyInstaller.archive.readers import CArchiveReader, PKG_ITEM_PYMODULE, PKG_ITEM_PYSOURCE
 
 
 def _analyze_collected_code_objects(filename):
@@ -30,7 +30,7 @@ def _analyze_collected_code_objects(filename):
     pkg_archive = CArchiveReader(filename)
 
     for name, (*_, typecode) in pkg_archive.toc.items():
-        if typecode not in {PKG_ITEM_PYPACKAGE, PKG_ITEM_PYMODULE, PKG_ITEM_PYSOURCE}:
+        if typecode not in {PKG_ITEM_PYMODULE, PKG_ITEM_PYSOURCE}:
             continue
 
         expected_co_filename = name + '.py'

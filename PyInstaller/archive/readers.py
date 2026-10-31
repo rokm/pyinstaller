@@ -24,12 +24,11 @@ class NotAnArchiveError(TypeError):
 
 # Type codes for CArchive TOC entries
 PKG_ITEM_BINARY = 'b'  # binary
-PKG_ITEM_DEPENDENCY = 'd'  # runtime option
+PKG_ITEM_DEPENDENCY = 'd'  # multi-package dependency
 PKG_ITEM_PYZ = 'z'  # zlib (pyz) - frozen Python code
 PKG_ITEM_ZIPFILE = 'Z'  # zlib (pyz) - frozen Python code
-PKG_ITEM_PYPACKAGE = 'M'  # Python package (__init__.py)
 PKG_ITEM_PYMODULE = 'm'  # Python module
-PKG_ITEM_PYSOURCE = 's'  # Python script (v3)
+PKG_ITEM_PYSOURCE = 's'  # Python script
 PKG_ITEM_DATA = 'x'  # data
 PKG_ITEM_RUNTIME_OPTION = 'o'  # runtime option
 PKG_ITEM_SPLASH = 'l'  # splash resources

@@ -250,7 +250,7 @@ pyi_python_import_modules(const struct PYI_CONTEXT *pyi_ctx)
     /* Iterate through toc looking for module entries (type 'm')
      * this is normally just bootstrap stuff (archive and iu) */
     for (toc_entry = archive->toc; toc_entry < archive->toc_end; toc_entry = pyi_archive_next_toc_entry(archive, toc_entry)) {
-        if (toc_entry->typecode != ARCHIVE_ITEM_PYMODULE && toc_entry->typecode != ARCHIVE_ITEM_PYPACKAGE) {
+        if (toc_entry->typecode != ARCHIVE_ITEM_PYMODULE) {
             continue;
         }
 
