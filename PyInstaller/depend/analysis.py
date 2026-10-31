@@ -991,29 +991,12 @@ def initialize_modgraph(excludes=(), user_hook_dirs=()):
 
 def get_bootstrap_modules():
     """
-    Get TOC with the bootstrapping modules and their dependencies.
+    Get TOC with the bootstrapping modules.
     :return: TOC with modules
     """
-    # Import 'struct' modules to get real paths to module file names.
-    mod_struct = __import__('struct')
-    # Basic modules necessary for the bootstrap process.
-    loader_mods = list()
-    loaderpath = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
-    # On some platforms (Windows, Debian/Ubuntu) '_struct' and zlib modules are built-in modules (linked statically)
-    # and thus does not have attribute __file__. 'struct' module is required for reading Python bytecode from
-    # executable. 'zlib' is required to decompress this bytecode.
-    for mod_name in ['_struct', 'zlib']:
-        mod = __import__(mod_name)  # C extension.
-        if hasattr(mod, '__file__'):
-            mod_file = os.path.abspath(mod.__file__)
-            # Resolve full destination name for extension, diverting it into python3.x/lib-dynload directory if
-            # necessary (to match behavior for extension collection introduced in #5604).
-            mod_dest = destination_name_for_extension(mod_name, mod_file, 'EXTENSION')
-            loader_mods.append((mod_dest, mod_file, 'EXTENSION'))
-    loader_mods.append(('struct', os.path.abspath(mod_struct.__file__), 'PYMODULE'))
     # Loader/bootstrap modules.
-    # NOTE: These modules should be kept simple without any complicated dependencies.
-    loader_mods += [
+    loaderpath = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
+    loader_mods = [
         ('pyimod01_archive', os.path.join(loaderpath, 'pyimod01_archive.py'), 'PYMODULE'),
         ('pyimod02_importers', os.path.join(loaderpath, 'pyimod02_importers.py'), 'PYMODULE'),
         ('pyimod03_ctypes', os.path.join(loaderpath, 'pyimod03_ctypes.py'), 'PYMODULE'),

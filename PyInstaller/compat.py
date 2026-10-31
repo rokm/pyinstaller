@@ -597,6 +597,7 @@ PY3_BASE_MODULES = {
     're',
     'reprlib',
     'stat',  # dependency of os.path
+    'struct',  # required by pyimod01_archive
     'traceback',  # for startup errors
     'types',
     'weakref',
