@@ -137,12 +137,11 @@ class PKG(Target):
     to include various read-only data in a single-file deployment.
     """
     xformdict = {
-        # PYMODULE entries are already byte-compiled, so we do not need to encode optimization level in the low-level
-        # typecodes. PYSOURCE entries are byte-compiled by the underlying writer, so we need to pass the optimization
-        # level via low-level typecodes.
+        # PYMODULE entries in PKG correspond to bootstrap modules, and should never be optimized when byte-compiled.
         'PYMODULE': 'm',
-        'PYMODULE-1': 'm',
-        'PYMODULE-2': 'm',
+        # PYSOURCE entries correspond to bootstrap script, run-time hooks, and the entry-point script. The latter
+        # might need to be optimized when byte-compiled, so we need to pass the optimization level via low-level
+        # typecodes.
         'PYSOURCE': 's',
         'PYSOURCE-1': 's1',
         'PYSOURCE-2': 's2',
@@ -214,6 +213,8 @@ class PKG(Target):
                 'BINARY': COMPRESSED,
                 'EXECUTABLE': COMPRESSED,
                 'PYSOURCE': COMPRESSED,
+                'PYSOURCE-1': COMPRESSED,
+                'PYSOURCE-2': COMPRESSED,
                 'PYMODULE': COMPRESSED,
                 'SPLASH': COMPRESSED,
                 # Do not compress PYZ as a whole, as it contains individually-compressed modules.
@@ -311,7 +312,7 @@ class PKG(Target):
                     archive_toc.append((dest_name, src_name, self.cdict.get(typecode, False), carchive_typecode))
             elif typecode == 'OPTION':
                 archive_toc.append((dest_name, '', False, 'o'))
-            elif typecode in {'PYSOURCE', 'PYSOURCE-1', 'PYSOURCE-2', 'PYMODULE', 'PYMODULE-1', 'PYMODULE-2'}:
+            elif typecode in {'PYSOURCE', 'PYSOURCE-1', 'PYSOURCE-2', 'PYMODULE'}:
                 # Collect python script and modules in a TOC that will not be sorted.
                 bootstrap_toc.append((dest_name, src_name, self.cdict.get(typecode, False), self.xformdict[typecode]))
             elif typecode == 'PYZ':
