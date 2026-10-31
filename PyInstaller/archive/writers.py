@@ -235,13 +235,8 @@ class CArchiveWriter:
             code = replace_filename_in_code_object(code, co_filename)
             return self._write_blob(fp, marshal.dumps(code), dest_name, 's', compress=compress)
         elif typecode in ('m', 'M'):
-            # Read the PYC file. We do not perform compilation here (in contrast to script files in the above branch),
-            # so typecode does not contain optimization level information.
-            with open(src_name, "rb") as in_fp:
-                data = in_fp.read()
-            assert data[:4] == BYTECODE_MAGIC
-            # Skip the PYC header, load the code object.
-            code = marshal.loads(data[16:])
+            # Bootstrap module; always compile without optimization
+            code = get_code_object(dest_name, src_name, optimize=0)
             co_filename = dest_name + '.py'  # Use dest name with added .py suffix.
             code = replace_filename_in_code_object(code, co_filename)
             # These module entries are loaded and executed within the bootloader, which requires only the code
