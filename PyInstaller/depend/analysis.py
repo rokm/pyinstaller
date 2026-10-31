@@ -42,7 +42,6 @@ from copy import deepcopy
 
 from PyInstaller import HOMEPATH, PACKAGEPATH
 from PyInstaller import log as logging
-from PyInstaller.building.utils import destination_name_for_extension
 from PyInstaller.compat import (
     BAD_MODULE_TYPES, BINARY_MODULE_TYPES, MODULE_TYPES_TO_TOC_DICT, PURE_PYTHON_MODULE_TYPES, PY3_BASE_MODULES,
     VALID_MODULE_TYPES, importlib_load_source, is_win
@@ -718,6 +717,54 @@ class PyiModuleGraph(ModuleGraph):
         importers = (importer.identifier for importer in importers if importer is not None)
         return [(importer, get_importer_edge_data(importer)) for importer in importers]
 
+    def analyze_bootstrap_elements(self):
+        """
+        Analyze bootstrap modules and script.
+
+        :return : list of Graph nodes.
+        """
+
+        bootstrap_nodes = []
+
+        loader_path = os.path.join(PACKAGEPATH, 'loader')
+
+        # Temporarily add loader_path to modulegraph's search path.
+        old_search_path = self.path
+        self.path = self.path + [loader_path]
+
+        # Loader/bootstrap modules.
+        logger.info('Analyzing bootstrap modules ...')
+        loader_modules = {
+            'pyimod01_archive': True,
+            'pyimod02_importers': True,
+            'pyimod03_ctypes': True,
+            'pyimod04_pywin32': is_win,
+        }
+
+        for module_name, include in loader_modules.items():
+            if include:
+                # NOTE: we do not need to add a reference (edge in modulegraph) for these modules; they will be added as
+                # part of subsequent analysis of bootstrap script.
+                nodes = self.import_hook(module_name)
+                assert len(nodes) == 1
+                node = nodes[0]
+                bootstrap_nodes.append(node)
+            else:
+                # Explicitly exclude; adding None entry to self.lazynodes creates an ExcludedModule node when the module
+                # is looked up as part of bootstrap script analysis.
+                self.lazynodes[module_name] = None
+
+        # The bootstrap script
+        logger.info('Analyzing bootstrap script ...')
+        bootstrap_script_file = os.path.join(loader_path, 'pyiboot01_bootstrap.py')
+        node = self.add_script(bootstrap_script_file, caller=self._top_script_node)
+        bootstrap_nodes.append(node)
+
+        # Restore original search path
+        self.path = old_search_path
+
+        return bootstrap_nodes
+
     # TODO: create a class from this function.
     def analyze_runtime_hooks(self, custom_runhooks):
         """
@@ -987,22 +1034,3 @@ def initialize_modgraph(excludes=(), user_hook_dirs=()):
         _cached_module_graph_._hooks_pre_find_module_path = None
 
     return graph
-
-
-def get_bootstrap_modules():
-    """
-    Get TOC with the bootstrapping modules.
-    :return: TOC with modules
-    """
-    # Loader/bootstrap modules.
-    loaderpath = os.path.join(HOMEPATH, 'PyInstaller', 'loader')
-    loader_mods = [
-        ('pyimod01_archive', os.path.join(loaderpath, 'pyimod01_archive.py'), 'PYMODULE'),
-        ('pyimod02_importers', os.path.join(loaderpath, 'pyimod02_importers.py'), 'PYMODULE'),
-        ('pyimod03_ctypes', os.path.join(loaderpath, 'pyimod03_ctypes.py'), 'PYMODULE'),
-    ]
-    if is_win:
-        loader_mods.append(('pyimod04_pywin32', os.path.join(loaderpath, 'pyimod04_pywin32.py'), 'PYMODULE'))
-    # The bootstrap script
-    loader_mods.append(('pyiboot01_bootstrap', os.path.join(loaderpath, 'pyiboot01_bootstrap.py'), 'PYSOURCE'))
-    return loader_mods

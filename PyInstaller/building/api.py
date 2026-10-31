@@ -28,12 +28,11 @@ from PyInstaller import log as logging
 from PyInstaller.archive.writers import CArchiveWriter, ZlibArchiveWriter
 from PyInstaller.building.datastruct import Target, _check_guts_eq, normalize_pyz_toc, normalize_toc
 from PyInstaller.building.utils import (
-    _check_guts_toc, _make_clean_directory, _rmtree, process_collected_binary, get_code_object, compile_pymodule
+    _check_guts_toc, _make_clean_directory, _rmtree, process_collected_binary, get_code_object
 )
 from PyInstaller.building.splash import Splash  # argument type validation in EXE
 from PyInstaller.compat import is_cygwin, is_darwin, is_linux, is_win, strict_collect_mode, is_nogil, is_aix
 from PyInstaller.depend import bindepend
-from PyInstaller.depend.analysis import get_bootstrap_modules
 import PyInstaller.utils.misc as miscutils
 
 logger = logging.getLogger(__name__)
@@ -76,32 +75,9 @@ class PYZ(Target):
         if name is None:
             self.name = os.path.splitext(self.tocfilename)[0] + '.pyz'
 
-        # PyInstaller bootstrapping modules.
-        bootstrap_dependencies = get_bootstrap_modules()
-
-        # Compile the python modules that are part of bootstrap dependencies, so that they can be collected into the
-        # CArchive/PKG and imported by the bootstrap script.
         self.dependencies = []
-        workpath = os.path.join(CONF['workpath'], 'localpycs')
-        for name, src_path, typecode in bootstrap_dependencies:
-            if typecode == 'PYMODULE':
-                # Compile pymodule and include the compiled .pyc file.
-                pyc_path = compile_pymodule(
-                    name,
-                    src_path,
-                    workpath,
-                    # Never optimize bootstrap dependencies!
-                    optimize=0,
-                    code_cache=None,
-                )
-                self.dependencies.append((name, pyc_path, typecode))
-            else:
-                # Include as is (extensions).
-                self.dependencies.append((name, src_path, typecode))
 
-        # Merge input TOC(s) and their code object dictionaries (if available). Skip the bootstrap modules, which will
-        # be passed on to CArchive/PKG.
-        bootstrap_module_names = set(name for name, _, typecode in self.dependencies if typecode == 'PYMODULE')
+        # Merge input TOC(s) and their code object dictionaries (if available).
         self.toc = []
         self.code_dict = {}
         for toc in tocs:
@@ -114,9 +90,6 @@ class PYZ(Target):
                 name, _, typecode = entry
                 # PYZ expects only PYMODULE entries (python code objects).
                 assert typecode in {'PYMODULE', 'PYMODULE-1', 'PYMODULE-2'}, f"Invalid entry passed to PYZ: {entry}!"
-                # Module required during bootstrap; skip to avoid collecting a duplicate.
-                if name in bootstrap_module_names:
-                    continue
                 self.toc.append(entry)
 
         # Normalize TOC

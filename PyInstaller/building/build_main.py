@@ -809,23 +809,32 @@ class Analysis(Target):
         self.datas.extend((dest, source, "DATA")
                           for (dest, source) in format_binaries_and_datas(self.graph.metadata_required()))
 
+        # Analyze bootstrap modules and script.
+        bootstrap_elements = self.graph.analyze_bootstrap_elements()
+
         # Analyze run-time hooks.
         rhtook_scripts = self.graph.analyze_runtime_hooks(self.custom_runtime_hooks)
 
         # -- Extract the nodes of the graph as TOCs for further processing. --
 
-        # Initialize the scripts list: run-time hooks (custom ones, followed by regular ones), followed by program
-        # script(s).
+        # Initialize the scripts list:
+        #  - bootstrap modules
+        #  - bootstrap script
+        #  - run-time hooks (custom ones, followed by regular ones)
+        #  - program script(s).
 
-        # We do not optimize bytecode of run-time hooks.
+        # We do not optimize bytecode of bootstrap elements nor run-time hooks.
+        bootstrap_toc = self.graph.nodes_to_toc(bootstrap_elements)
         rthook_toc = self.graph.nodes_to_toc(rhtook_scripts)
+
+        boostrap_module_names = {name for name, src_path, typecode in bootstrap_toc if typecode == 'PYMODULE'}
 
         # Override the typecode of program script(s) to include bytecode optimization level.
         program_toc = self.graph.nodes_to_toc(program_scripts)
         optim_typecode = {0: 'PYSOURCE', 1: 'PYSOURCE-1', 2: 'PYSOURCE-2'}[self.optimize]
         program_toc = [(name, src_path, optim_typecode) for name, src_path, typecode in program_toc]
 
-        self.scripts = rthook_toc + program_toc
+        self.scripts = bootstrap_toc + rthook_toc + program_toc
         self.scripts = normalize_toc(self.scripts)  # Should not really contain duplicates, but just in case...
 
         # Extend the binaries list with all the Extensions modulegraph has found.
@@ -885,6 +894,11 @@ class Analysis(Target):
         optim_level = self.optimize  # We could extend this with per-module settings, similar to `collect_mode`.
         for name, src_path, typecode in pure_pymodules_toc:
             assert typecode == 'PYMODULE'
+
+            # Skip the bootstrap modules - these go directly into PKG archive
+            if name in boostrap_module_names:
+                continue
+
             collect_mode = _get_module_collection_mode(self.graph._module_collection_mode, name, self.noarchive)
 
             # Collect byte-compiled .pyc into PYZ archive or base_library.zip. Embed optimization level into typecode.
