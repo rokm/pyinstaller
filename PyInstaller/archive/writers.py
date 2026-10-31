@@ -199,7 +199,7 @@ class CArchiveWriter:
         # (a file with same destination name, subject to OS case normalization rules).
         if strict_collect_mode:
             normalized_dest = None
-            if typecode in {'s', 's1', 's2', 'm', 'M'}:
+            if typecode in {'s', 's1', 's2', 'm'}:
                 # Exempt python source scripts and modules from the check.
                 pass
             else:
@@ -234,7 +234,7 @@ class CArchiveWriter:
             co_filename = os.path.splitext(dest_name)[0] + os.path.splitext(code.co_filename)[1]
             code = replace_filename_in_code_object(code, co_filename)
             return self._write_blob(fp, marshal.dumps(code), dest_name, 's', compress=compress)
-        elif typecode in ('m', 'M'):
+        elif typecode == 'm':
             # Bootstrap module; always compile without optimization
             code = get_code_object(dest_name, src_name, optimize=0)
             co_filename = dest_name + '.py'  # Use dest name with added .py suffix.

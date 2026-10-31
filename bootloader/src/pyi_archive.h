@@ -24,12 +24,11 @@
 
 /* Types of CArchive items. */
 #define ARCHIVE_ITEM_BINARY           'b'  /* binary */
-#define ARCHIVE_ITEM_DEPENDENCY       'd'  /* runtime option */
+#define ARCHIVE_ITEM_DEPENDENCY       'd'  /* multi-package dependency */
 #define ARCHIVE_ITEM_PYZ              'z'  /* zlib (pyz) - frozen Python code */
 #define ARCHIVE_ITEM_ZIPFILE          'Z'  /* zlib (pyz) - frozen Python code */
-#define ARCHIVE_ITEM_PYPACKAGE        'M'  /* Python package (__init__.py) */
 #define ARCHIVE_ITEM_PYMODULE         'm'  /* Python module */
-#define ARCHIVE_ITEM_PYSOURCE         's'  /* Python script (v3) */
+#define ARCHIVE_ITEM_PYSOURCE         's'  /* Python script */
 #define ARCHIVE_ITEM_DATA             'x'  /* data */
 #define ARCHIVE_ITEM_RUNTIME_OPTION   'o'  /* runtime option */
 #define ARCHIVE_ITEM_SPLASH           'l'  /* splash resources */
