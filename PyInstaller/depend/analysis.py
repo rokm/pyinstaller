@@ -50,7 +50,9 @@ from PyInstaller.depend import bytecode
 from PyInstaller.depend.imphook import AdditionalFilesCache, ModuleHookCache
 from PyInstaller.depend.imphookapi import (PreFindModulePathAPI, PreSafeImportModuleAPI)
 from PyInstaller.lib.modulegraph.find_modules import get_implies
-from PyInstaller.lib.modulegraph.modulegraph import ModuleGraph, DEFAULT_IMPORT_LEVEL, ABSOLUTE_IMPORT_LEVEL, Package
+from PyInstaller.lib.modulegraph.modulegraph import (
+    ModuleGraph, DEFAULT_IMPORT_LEVEL, ABSOLUTE_IMPORT_LEVEL, Package, SourceModule, MissingModule
+)
 from PyInstaller.log import DEBUG, INFO, TRACE
 from PyInstaller.utils.hooks import collect_submodules, is_package
 
@@ -726,42 +728,41 @@ class PyiModuleGraph(ModuleGraph):
 
         bootstrap_nodes = []
 
-        loader_path = os.path.join(PACKAGEPATH, 'loader')
-
-        # Temporarily add loader_path to modulegraph's search path.
-        old_search_path = self.path
-        self.path = self.path + [loader_path]
-
         # Loader/bootstrap modules.
+        # NOTE: these are discoverable via pre-find-module-path hooks. The discovery of platform-specific modules (such
+        # as pyimod04_pywin32) should be suppressed on unsupported platforms by the said hooks.
         logger.info('Analyzing bootstrap modules ...')
-        loader_modules = {
-            'pyimod01_archive': True,
-            'pyimod02_importers': True,
-            'pyimod03_ctypes': True,
-            'pyimod04_pywin32': is_win,
-        }
+        loader_modules = (
+            'pyimod01_archive',
+            'pyimod02_importers',
+            'pyimod03_ctypes',
+            'pyimod04_pywin32',
+        )
 
-        for module_name, include in loader_modules.items():
-            if include:
-                # NOTE: we do not need to add a reference (edge in modulegraph) for these modules; they will be added as
-                # part of subsequent analysis of bootstrap script.
+        for module_name in loader_modules:
+            # We do not need to add a reference (edge in modulegraph) for these modules; they will be added as part of
+            # subsequent analysis of the bootstrap script.
+            try:
                 nodes = self.import_hook(module_name)
-                assert len(nodes) == 1
-                node = nodes[0]
+            except ImportError:
+                continue
+
+            # The node should be either a SourceModule, or possibly a MissingModule (for platform-specific modules that
+            # happened to be referenced during the prior analysis of the user's code).
+            assert len(nodes) == 1
+            node = nodes[0]
+            if isinstance(node, SourceModule):
                 bootstrap_nodes.append(node)
+            elif isinstance(node, MissingModule):
+                continue
             else:
-                # Explicitly exclude; adding None entry to self.lazynodes creates an ExcludedModule node when the module
-                # is looked up as part of bootstrap script analysis.
-                self.lazynodes[module_name] = None
+                raise ValueError(f"Unexpected node type for bootstrap module: {type(node)!r}")
 
         # The bootstrap script
         logger.info('Analyzing bootstrap script ...')
-        bootstrap_script_file = os.path.join(loader_path, 'pyiboot01_bootstrap.py')
-        node = self.add_script(bootstrap_script_file, caller=self._top_script_node)
+        bootstrap_script = os.path.join(PACKAGEPATH, 'loader', 'pyiboot01_bootstrap.py')
+        node = self.add_script(bootstrap_script, caller=self._top_script_node)
         bootstrap_nodes.append(node)
-
-        # Restore original search path
-        self.path = old_search_path
 
         return bootstrap_nodes
 
